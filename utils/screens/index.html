@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=480">
+<meta charset="utf-8">
+<title>Console to Screen</title>
+<script type="text/javascript">
+var print = console.log;
+function isset(varvalue) {
+	return !(typeof varvalue==='undefined' || varvalue===null);
+}
+function one(selector) { return document.querySelector(selector); }
+function all(selector) { return document.querySelectorAll(selector); }
+function wot(what) {
+	// takes a string selector, existing node, node list, or array, and returns a node list or array
+	var nodes = what;
+	if (typeof what == 'string') {
+		nodes = all(what);
+	}
+	else if (!(what instanceof NodeList || Array.isArray(what))) {
+		nodes = [what];
+	}
+	// if (nodes.length==0) console.error('wot miss: ', what);
+	return nodes;
+}
+function each(what, eachFunc) {
+	var nodes = wot(what);
+	for (var i=0; i<nodes.length; i++) {
+		if (eachFunc(i,nodes[i])) break;
+	}
+}
+(function(global) {
+	// NOTE: this construction supports unbindAll()
+	// document.body on down can be unbound in a
+	// single call replacing the documet.body with 
+	// a clone of itself but we need to special case
+	// document and window bindings to track and 
+	// unbind them manually
+
+	// private
+	var bindings = {};
+	function pushBinding(node, eventName, eventHandler) {
+		if (node==window || node==document) {
+			var nodeName = node==window?'window':'document';
+			if (!bindings[nodeName]) bindings[nodeName] = {};
+			if (!bindings[nodeName][eventName]) bindings[nodeName][eventName] = [];
+			// print(`pushed bindng ${nodeName}.${eventName}[${bindings[nodeName][eventName].length}]`);
+			bindings[nodeName][eventName].push(eventHandler);
+		}
+	}
+	function dropBinding(node, eventName, eventHandler) {
+		if (node==window || node==document) {
+			var nodeName = node==window?'window':'document';
+			if (!bindings[nodeName]) return;
+			if (!bindings[nodeName][eventName]) return;
+			var i = bindings[nodeName][eventName].indexOf(eventHandler);
+			if (i==-1) return;
+			// print(`dropped bindng ${nodeName}.${eventName}[${i}]`);
+			bindings[nodeName][eventName].splice(i, 1);
+		}
+	}
+
+	// public
+	function bind(what, eventNames, eventHandler) {
+		var nodes = wot(what);
+		eventNames = eventNames.split(/\s*,\s*/);
+		for (var j=0; j<nodes.length; j++) {
+			var node = nodes[j];
+			for (var i=0; i<eventNames.length; i++) {
+				var eventName = eventNames[i]
+				node.addEventListener(eventName, eventHandler);
+				pushBinding(node, eventName, eventHandler);
+			}
+		}
+	}
+	function unbind(what, eventNames, eventHandler) {
+		var nodes = wot(what);
+		eventNames = eventNames.split(/\s*,\s*/);
+		for (var j=0; j<nodes.length; j++) {
+			var node = nodes[j];
+			for (var i=0; i<eventNames.length; i++) {
+				var eventName = eventNames[i]
+				node.removeEventListener(eventName, eventHandler);
+				dropBinding(node, eventName, eventHandler);
+			}
+		}
+	}
+	function unbindAll() {
+		// reset all but the document and window event listeners
+		document.body.replaceWith(document.body.cloneNode(true));
+		for (var nodeName in bindings) {
+			var node = nodeName=='window'?window:document;
+			for (var eventName in bindings[nodeName]) {
+				var eventHandlers = bindings[nodeName][eventName];
+				for (var i=eventHandlers.length-1; i>=0; i--) {
+					unbind(node, eventName, eventHandlers[i]);
+				}
+			}
+		}
+	}
+
+	global.bind = bind;
+	global.unbind = unbind;
+	global.unbindAll = unbindAll;
+})(window);
+function ready(eventHandler) { bind(document, 'DOMContentLoaded', eventHandler); }
+function style(rules, id) {
+	if (id) {
+		var node = one('#'+id);
+		if (node) node.parentNode.removeChild(node);
+	}
+	var node = document.createElement('style');
+	if (id) node.id = id;
+	node.type = 'text/css';
+	node.appendChild(document.createTextNode(rules));
+	document.head.appendChild(node);
+}
+function clone(obj) {
+	return JSON.parse(JSON.stringify(obj));
+}
+</script>
+<script type="text/javascript">
+
+function addUnit(pixel_width,pixel_height,inch_diagonal, sub_pixel_width,sub_pixel_height, integer_scaling,cropped,console_name) {
+	if (isNaN(pixel_width) || isNaN(pixel_height) || isNaN(inch_diagonal) || isNaN(sub_pixel_width) || isNaN(sub_pixel_height)) return;
+	if (pixel_width==0 || pixel_height==0 || inch_diagonal==0 || sub_pixel_width==0 || sub_pixel_height==0) return;
+
+	// calc
+	var pixel_diagonal = Math.sqrt(Math.pow(pixel_width,2) + Math.pow(pixel_height,2))
+
+	var inch_width = inch_diagonal * pixel_width / pixel_diagonal
+	var inch_height = inch_diagonal * pixel_height / pixel_diagonal
+
+	var final_diagonal = Math.sqrt(Math.pow(inch_width,2) + Math.pow(inch_height,2))
+	// print(`${pixel_width}x${pixel_height} ${inch_diagonal}" (${inch_width.toFixed(1)}"x${inch_height.toFixed(1)}")`);
+
+	var sub_scale_x = pixel_width / sub_pixel_width
+	var sub_scale_y = pixel_height / sub_pixel_height
+
+	if (integer_scaling) {
+		sub_scale_x = Math.floor(sub_scale_x)
+		sub_scale_y = Math.floor(sub_scale_y)
+	}
+
+	var sub_scale
+	if (cropped) sub_scale = sub_scale_y < sub_scale_x ? sub_scale_x : sub_scale_y
+	else         sub_scale = sub_scale_x < sub_scale_y ? sub_scale_x : sub_scale_y
+
+	var scaled_pixel_width = sub_pixel_width * sub_scale
+	var scaled_pixel_height = sub_pixel_height * sub_scale
+
+	var sub_inch_width = inch_width * scaled_pixel_width / pixel_width
+	var sub_inch_height = inch_height * scaled_pixel_height / pixel_height
+	var sub_inch_diagonal = Math.sqrt(Math.pow(sub_inch_width,2) + Math.pow(sub_inch_height,2))
+	// print(`${sub_pixel_width}x${sub_pixel_height}@${sub_scale}x ${sub_inch_diagonal.toFixed(1)}" (${sub_inch_width.toFixed(1)}"x${sub_inch_height.toFixed(1)}")`)
+
+	// NOTE: CSS inches do not equal on screen inches :weary: might as well just set pixels
+	var unit = document.createElement('div');
+	var hed = document.createElement('div');
+	var dst = document.createElement('div');
+	var src = document.createElement('div');
+	var scl = document.createElement('div');
+	unit.className = 'unit';
+	hed.className = 'head';
+	dst.className = 'dst';
+	src.className = 'src';
+	if (!sub_scale) {
+		src.className += ' misfit';
+		sub_inch_width = inch_width;
+		sub_inch_height = inch_height;
+	}
+	scl.className = 'scale';
+	src.appendChild(scl);
+	dst.appendChild(src);
+	if (console_name) {
+		hed.innerHTML = `<strong>${console_name}</strong><br>${sub_pixel_width}x${sub_pixel_height}`;
+		unit.appendChild(hed);
+	}
+	unit.appendChild(dst);
+	preview.appendChild(unit);
+		
+	// var dst = one('#dst')
+	dst.style.width  = inch_width+'in'
+	dst.style.height = inch_height+'in'
+	
+	// var src = one('#src')
+	src.style.width  = sub_inch_width+'in'
+	src.style.height = sub_inch_height+'in'
+	
+	var inch_ox = ((inch_width - sub_inch_width) / 2)
+	var inch_oy = ((inch_height - sub_inch_height) / 2)
+	src.style.top = inch_oy+'in'
+	src.style.left = inch_ox+'in'
+		
+	// var scl = one('#scale');
+	var html = ''
+	if (sub_inch_diagonal.toFixed(1)>0) html += `${sub_inch_diagonal.toFixed(1)}" at ${sub_scale%1==0?sub_scale:sub_scale.toFixed(1)}x`;
+	else html += 'insufficient pixels';
+	if (cropped && (inch_ox<0 || inch_oy<0)) {
+		var ox = (pixel_width-scaled_pixel_width) / 2
+		var oy = (pixel_height-scaled_pixel_height) / 2
+		ox = Math.ceil(ox/sub_scale)
+		oy = Math.ceil(oy/sub_scale)
+		ox = ox>0 ? 0 : -ox
+		oy = oy>0 ? 0 : -oy
+		if (ox!=0 || oy!=0) html += `<br>(cropped: ${ox},${oy})`
+	}
+	scl.innerHTML = html
+}
+function gcd(a, b) { while (b) { [a, b] = [b, a % b]; } return a; }
+function recalc() {
+	// dst screen
+	var pixel_width = parseInt(one('#dst_width').value)
+	var pixel_height = parseInt(one('#dst_height').value)
+	var inch_diagonal = parseFloat(one('#dst_size').value)
+	var pixel_diagonal = Math.sqrt(Math.pow(pixel_width,2) + Math.pow(pixel_height,2))
+	
+	// src screen
+	var sub_pixel_width = parseInt(one('#src_width').value)
+	var sub_pixel_height = parseInt(one('#src_height').value)
+	var integer_scaling = one('#src_nn').checked
+	var cropped = one('#src_crop').checked
+	var show_all = one('#show_all').checked
+	var console_name = one('#src_screen').value
+
+	var preview = one('#preview');
+	preview.innerHTML = '';
+
+	if (show_all) {
+		var src = one('#src_screen');
+		for (var i=0; i<src.length; i++) {
+			var value = src[i].value;
+			if (value=='Custom') continue;
+			
+			var m = value.match(/(.+)\s*\(([0-9]+)x([0-9]+)\)/)
+			addUnit(pixel_width,pixel_height,inch_diagonal, m[2],m[3], integer_scaling,cropped,m[1]);
+		}
+	}
+	else {
+		addUnit(pixel_width,pixel_height,inch_diagonal, sub_pixel_width,sub_pixel_height, integer_scaling,cropped);
+	}
+	
+	var hash = {};
+	each('input,select', function(i,node) {
+		hash[node.id] = node.tagName=='SELECT' ? parseInt(node.selectedIndex) : node.type=='checkbox' ? (node.checked?1:0) : parseFloat(node.value);
+	})
+	one('#share').href=`./#${JSON.stringify(hash).replace(/["\{\}]/g,'')}`;
+	
+	var aspect_scale = gcd(pixel_width,pixel_height);
+	var aspect_width = pixel_width / aspect_scale;
+	var aspect_height = pixel_height / aspect_scale;
+	
+	if (aspect_width>16 || aspect_height>9) {
+		var size = {w:aspect_width, h:aspect_height};
+		var sizes = [
+			{w:3,h:2},
+			{w:4,h:3},
+			{w:5,h:4},
+			{w:16,h:9},
+			{w:16,h:10},
+			{w:21,h:9},
+		];
+		
+		var best = sizes[0];
+		var best_diff = -1;
+		var ratio = size.w / size.h;
+		for (var i=0; i<sizes.length; i++) {
+			var next = sizes[i];
+			var diff = Math.abs(ratio - (next.w / next.h));
+			if (best_diff==-1 || diff<best_diff) {
+				best_diff = diff;
+				best = next;
+			}
+		}
+		aspect_width = best.w;
+		aspect_height = best.h;
+	}
+	
+	var ppi = Math.floor(pixel_diagonal / inch_diagonal);
+	one('#ppi').innerHTML = `${ppi}ppi (${aspect_width}:${aspect_height})`;
+}
+
+ready(function() {
+	if (location.hash) {
+		var defaults = location.hash.replace(/^#/, '').split(',')
+		var object = {};
+		for (var i=0; i<defaults.length; i++) {
+			var pair = defaults[i].split(':') 
+			object[pair[0]] = parseFloat(pair[1]);
+		}
+		for (var key in object) {
+			var node = one(`#${key}`);
+			if (node.tagName=='SELECT') {
+				// index can change with additions, match on resolution when that happens
+				// TODO: this doesn't always match known screens correctly
+				node.selectedIndex = parseInt(object[key]);
+				if (key.match(/^src_/)) {
+					var n = node.value.match(/\(([0-9]+)x([0-9]+)\)/);
+					if (n) {
+						var nw = parseFloat(n[1]);
+						var nh = parseFloat(n[2]);
+						var w = object.src_width;
+						var h = object.src_height;
+						if (w!=nw || h!=nh) {
+							var found = false;
+							for (var i=1; i<node.length; i++) {
+								var o = node.options[i].value.match(/\(([0-9]+)x([0-9]+)\)/);
+								var ow = parseFloat(o[1]);
+								var oh = parseFloat(o[2]);
+								if (ow==w && oh==h) {
+									found = true;
+									node.selectedIndex = i;
+									break;
+								}
+							}
+							if (!found) {
+								node.selectedIndex = 0;
+							}
+						}
+					}
+				}
+				else if (node.value!='Custom') {
+					var n = node.value.match(/\(([0-9]+)x([0-9]+)\s+([0-9.]+)"\)/)
+					var nw = parseFloat(n[1])
+					var nh = parseFloat(n[2])
+					var ns = parseFloat(n[3])
+					var w = object.dst_width;
+					var h = object.dst_height;
+					var s = object.dst_size;
+					if (w!=nw || h!=nh || s!=ns) {
+						var found = false;
+						for (var i=1; i<node.length; i++) {
+							var o = node.options[i].value.match(/\(([0-9]+)x([0-9]+)\s+([0-9.]+)"\)/)
+							
+							var ow = parseFloat(o[1]);
+							var oh = parseFloat(o[2]);
+							var os = parseFloat(o[3]);
+							if (ow==w && oh==h && os==s) {
+								found = true;
+								node.selectedIndex = i;
+								break;
+							}
+						}
+						if (!found) {
+							node.selectedIndex = 0;
+						}
+					}
+				}
+			}
+			else if (node.tagName=='INPUT') {
+				if (node.type=='checkbox') {
+					node.checked = object[key]=='1'
+				}
+				else {
+					node.value = object[key]
+				}
+			}
+		}
+	}
+	
+	changeSrc();
+	changeDst();
+	recalc()
+	bind('input', 'change,blur', recalc)
+	
+	function changeDst() {
+		var dst = one('#dst_screen');
+		var value = dst.value
+		if (value=='Custom') {
+			one('#dst_custom').classList.add('custom')
+			return
+		}
+		one('#dst_custom').classList.remove('custom')
+
+		var m = value.match(/\(([0-9]+)x([0-9]+)\s+([0-9.]+)"\)/)
+		one('#dst_width').value = m[1]
+		one('#dst_height').value = m[2]
+		one('#dst_size').value = m[3]
+		recalc()
+	}
+	bind('#dst_screen', 'change', changeDst);
+	
+	function changeSrc() {
+		var src = one('#src_screen');
+		var value = src.value;
+		var show_all = one('#show_all')
+		if (value=='Custom') {
+			show_all.checked = false
+			show_all.disabled = true;
+			recalc()
+			one('#src_custom').classList.add('custom')
+			return
+		}
+		show_all.disabled = false;
+		one('#src_custom').classList.remove('custom')
+
+		var m = value.match(/\(([0-9]+)x([0-9]+)\)/)
+		one('#src_width').value = m[1]
+		one('#src_height').value = m[2]
+		recalc()
+	}
+	bind('#src_screen', 'change', changeSrc)
+	
+	bind(document, 'keydown', function(event) {
+		var srcBefore;
+		var dstBefore
+		var src = one('#src_screen');
+		var dst = one('#dst_screen');
+		var srcIndex = srcBefore = src.selectedIndex;
+		var dstIndex = dstBefore = dst.selectedIndex;
+		if (event.keyCode==37) srcIndex -= 1;
+		else if (event.keyCode==38) dstIndex -= 1;
+		else if (event.keyCode==39) srcIndex += 1;
+		else if (event.keyCode==40) dstIndex += 1;
+		if (srcIndex<0) srcIndex = 0;
+		if (dstIndex<0) dstIndex = 0;
+		if (srcIndex>src.length-1) srcIndex = src.length-1
+		if (dstIndex>dst.length-1) dstIndex = dst.length-1
+		if (srcIndex!=srcBefore) {
+			src.selectedIndex = srcIndex;
+			changeSrc();
+		}
+		if (dstIndex!=dstBefore) {
+			dst.selectedIndex = dstIndex;
+			changeDst();
+		}
+	})  
+	
+	function resizePair() {
+		var original = one('div.wrap')
+		var iframes = all('iframe');
+		for (var i=0; i<iframes.length; i++) {
+			var iframe = iframes[i];
+			iframe.width = original.offsetWidth + 16; // iframe.contentWindow.document.body.scrollWidth;
+			iframe.height = original.offsetHeight + 16; //iframe.contentWindow.document.body.scrollHeight;
+		}
+	}
+})
+</script>
+<style>
+	body {
+		margin: 0 1em;
+		font-family: sans-serif;
+		font-size: 16px;
+	}
+	fieldset {
+		border: 2px solid lightgray;
+		border-radius: 4px;
+		margin: 0.5em 0.5em 0 0;
+		display: inline-block;
+		vertical-align: top;
+	}
+	legend {
+		font-weight: bold;
+	}
+	strong {
+		margin-left: 8px;
+	}
+	#preview {
+		margin: 1em 0;
+	}
+	.unit {
+		display: inline-block;
+		margin: 0 1em 1em 0;
+	}
+	.head {
+		margin: 0 0 0.5em;
+	}
+	.head strong {
+		margin: 0;
+	}
+	.dst {
+		background-color: black;
+		position: relative;
+	}
+	.src {
+		position: absolute;
+		background-color: rgba(128,128,128,0.75);
+		display: grid;
+		pointer-events: none;
+	}
+	.src.misfit {
+		background-color: rgba(255,0,0,0.75);
+	}
+	.scale {
+		margin: auto;
+		color: white;
+		white-space: nowrap;
+		text-align: center;
+	}
+	label {
+		white-space: nowrap;
+	}
+	select {
+		zoom: 1.001;
+	}
+	input,select,option {
+		font-size: inherit;
+	}
+	input[size="4"] {
+		width: 4ch;
+		text-align: right;
+		margin-right: 4px;
+	}
+	#dst_custom,
+	#src_custom {
+		display: none;
+	}
+	.custom {
+		display: block !important;
+	}
+	fieldset div {
+		margin-top: 0.5em;
+	}
+	iframe {
+		border: none;
+		overflow: hidden;
+	}
+</style>
+</head>
+<body>
+	<fieldset>
+		<legend>Console</legend>
+		<select id="src_screen">
+						<option>Custom</option>
+						<optgroup label="Handhelds">
+							<option>Pokémon mini     (96x64)</option>
+							<option>Lynx             (160x102)</option>
+							<option>Game Boy/Game Gear (160x144)</option>
+							<option>Neo Geo Pocket   (160x152)</option>
+							<option>WonderSwan       (224x144)</option>
+							<option selected>Game Boy Advance (240x160)</option>
+							<option>Nintendo DS □    (256x192)</option>
+							<option>Nintendo DS ◫    (512x192)</option>
+							<option>Nintendo DS ⊟    (256x384)</option>
+							<option>PSP              (480x272)</option>
+							<option>Nintendo 3DS □, top    (400x240)</option>
+							<option>Nintendo 3DS □, bottom (320x240)</option>
+							<option>Nintendo 3DS ◫   (720x240)</option>
+							<option>Nintendo 3DS ⊟   (400x480)</option>
+							<option>Nintendo Switch, handheld (1280x720)</option>
+						</optgroup>
+						<optgroup label="Home Consoles">
+							<option>Nintendo         (256x240)</option>
+							<option>Genesis          (320x224)</option>
+							<option>Super Nintendo   (256x224)</option>
+							<option>PlayStation      (320x240)</option>
+							<option>Nintendo 64      (320x240)</option>
+							<option>Dreamcast        (640x480)</option>
+							<option>Nintendo Switch, docked (1920x1080)</option>
+						</optgroup>
+						<optgroup label="Other">
+							<option>PICO-8           (128x128)</option>
+							<option>Virtual Boy      (384x224)</option>
+						</optgroup>
+					</select>
+		<div>
+			<label><strong>Integer scaling</strong> <input id="src_nn" type="checkbox" checked></label>
+			<label><strong>Crop Overscan</strong> <input id="src_crop" type="checkbox"></label>
+		</div>
+		<div id="src_custom">
+			<label><strong>Width</strong> <input id="src_width" size=4 value=240>px</label>
+			<label><strong>Height</strong> <input id="src_height" size=4 value=160>px</label>
+		</div>
+	</fieldset>
+	<fieldset>
+		<legend>Screen</legend>
+		<select id="dst_screen">
+						<option>Custom</option>
+						<optgroup label="1:1">
+							<option>FunKey S   (240x240 1.54")</option>
+							<option>Retro Pixel Pocket (720x720 3.1")</option>
+							<option>RG Rotate (720x720 3.5")</option>
+							<option>RGB30      (720x720 4.0")</option>
+						</optgroup>
+						<optgroup label="3:2">
+							<option>RS-90      (240x160 2.0")</option>
+							<option>RG34XX     (720x480 3.4")</option>
+							<option>PowKiddy V10      (480x320 3.5")</option>
+							<option>AYANEO Pocket Micro (960x640 3.5")</option>
+							<option>KT R1      (1620x1080 4.5")</option>
+							<option>GAMEMT EX8      (1620x1080 4.88")</option>
+						</optgroup>
+						<optgroup label="2:3">
+							<option>MagicX One 35 (640x960 3.5")</option>
+						</optgroup>
+						<optgroup label="4:3">
+							<option>Trimui Model S (320x240 2.0")</option>
+							<option>Trimui Smart   (320x240 2.4")</option>
+							<option>GKD Pixel II   (640x480 2.4")</option>
+							<option>RG280M     (320x240 2.8")</option>
+							<option>Miyoo A30 (640x480 2.8")</option>
+							<option>Miyoo Mini (v4) (752x560 2.8")</option>
+							<option>RG300      (320x240 3.0")</option>
+							<option>RG300X     (640x480 3.0")</option>
+							<option>Trimui Brick (1024x768 3.2")</option>
+							<option>RG350      (320x240 3.5")</option>
+							<option>Miyoo Mini+     (640x480 3.5")</option>
+							<option>RP Mini     (1280x960 3.7")</option>
+							<option>Trimui Brick Pro     (1024x768 3.95")</option>
+							<option>RG405M     (640x480 4.0")</option>
+							<option>RG406V     (960x720 4.0")</option>
+							<option>AYANEO Pocket Air Mini     (1280x960 4.2")</option>
+							<option selected>RP Nova     (1280x960 4.5")</option>
+							<option>RG477M     (1280x960 4.7")</option>
+						</optgroup>
+						<optgroup label="3:5">
+							<option>MagicX Zero 40 (480x800 4.0")</option>
+						</optgroup>
+						<optgroup label="5:3">
+							<option>Miyoo P60  (800x480 4.0") RIP</option>
+							<option>RG552      (1920x1152 5.36")</option>
+						</optgroup>
+						<optgroup label="16:9">
+							<option>M17        (480x272 4.3")</option>
+							<option>RP3        (1334x750 4.7")</option>
+							<option>Trimui Smart Pro (1280x720 4.96")</option>
+							<option>RGB10 Max  (854x480 5.0")</option>
+							<option>GAMEMT E5      (960x544 5.0")</option>
+							<option>GAMEMT E6 Max      (1280x720 5.0")</option>
+							<option>RG556      (1920x1080 5.48")</option>
+							<option>RP5      (1920x1080 5.5")</option>
+							<option>WIN600     (1280x720 5.94")</option>
+							<option>AYN Odin 3 (1920x1080 6")</option>
+							<option>AYANEO Pocket S (2560x1440 6")</option>
+							<option>ASUS ROG Ally (1920x1080 7")</option>
+						</optgroup>
+						<optgroup label="Other">
+							<option>Analogue Pocket (1600x1440 3.5")</option>
+							<!-- <option>GKD 350H Ultra (1440x1296 3.5")</option> -->
+							<option>AYANEO Pocket DMG (1240x1080 3.92")</option>
+							<option>Steam Deck (1280x800 7")</option>
+						</optgroup>
+					</select>
+		<div id="dst_custom">
+			<label><strong>Width</strong> <input id="dst_width" size=4 value=640>px</label>
+			<label><strong>Height</strong> <input id="dst_height" size=4 value=480>px</label>
+			<label><strong>Size</strong> <input id="dst_size" size=4 value=2.8>in</label>
+		</div>
+		<div>
+			<span id="ppi"></span> <label><strong>Show All Consoles</strong> <input id="show_all" type="checkbox"></label>
+		</div>
+	</fieldset>
+
+	<div id="preview"></div>
+
+	<a href="./">Reset</a> or <a id="share" href="./">Share this combination</a><br><a>credit to </a><b>shaun inman</b>
+</body>
+</html>
