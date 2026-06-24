@@ -199,6 +199,11 @@
             font-weight: bold;
             text-align: right;
         }
+		/****************************
+         *
+         * Images
+         *
+         ****************************/
 		.left-image {
 			position: absolute;
 			bottom: 0px;
@@ -216,6 +221,12 @@
 			height: 100%;
 			filter: drop-shadow(0px 0px 20px #000000);
 			z-index: 1337;
+		}
+		.map-token {
+			position: fixed;
+			bottom: 10px;
+			right: 10px;
+			z-index: 69;
 		}
         </style>
     </head>
@@ -264,16 +275,37 @@
             </footer>
         </section>
 		
+		<img id="random-image" src="https://static.wikia.nocookie.net/fireemblem/images/5/50/FE14_Sumeragi_Swordmaster_Map_Sprite_%28Chapter_5%29.gif" class="map-token"/>
+		
 		<!-- <img src="https://i.imgur.com/YgO8GkC.png" class="left-image" /> -->
 		<!-- <img src="https://i.imgur.com/Sfzv5uT.png" class="right-image" /> -->
 		
-		<!-- <script> -->
-		<!-- var images = ["http://i.imgur.com/MsWb01U.png", "http://i.imgur.com/fl1nQcx.png"]; -->
-		<!-- //, "http://i.imgur.com/l3Q59pD.png", "http://i.imgur.com/LHvhvkz.png" -->
-		<!-- var image = images[Math.floor(Math.random()*images.length)]; -->
-
-		<!-- $(".left-image").attr("src", image); -->
-		<!-- </script> -->
+		<script>
+			document.addEventListener("DOMContentLoaded", () => {
+				const images = [
+					'https://static.wikia.nocookie.net/fireemblem/images/b/b0/FE13_Lucina_Lord_Map_Sprite.gif',
+					'https://static.wikia.nocookie.net/fireemblem/images/4/45/FE13_Olivia_Dancer_Map_Sprite.gif',
+					'https://static.wikia.nocookie.net/fireemblem/images/2/2d/FE13_Cherche_Wyvern_Rider_Map_Sprite.gif',
+					'https://static.wikia.nocookie.net/fireemblem/images/6/62/FE14_Charlotte_Fighter_Map_Sprite.gif',
+					'https://static.wikia.nocookie.net/fireemblem/images/a/a2/FE14_Hinoka_Pegasus_Warrior_Map_Sprite.gif',
+					'https://static.wikia.nocookie.net/fireemblem/images/9/91/FE14_Felicia_Maid_Map_Sprite.gif',
+					'https://static.wikia.nocookie.net/fireemblem/images/8/83/FE15_Cleric_%28Silque%29.gif',
+					'https://static.wikia.nocookie.net/fireemblem/images/e/ed/FE15_Cleric_%28Genny%29.gif',
+					'https://static.wikia.nocookie.net/fireemblem/images/2/2e/FE15_Soldier_%28Lukas%29.gif',
+					'https://cdn.fireemblemwiki.org/5/54/Ma_fe16_brigand_hilda_playable.gif',
+					'https://cdn.fireemblemwiki.org/f/f6/Ma_fe16_cavalier_ferdinand_playable.gif',
+					'https://cdn.fireemblemwiki.org/f/f1/Ma_fe16_priest_mercedes_playable.gif',
+					'https://cdn.fireemblemwiki.org/2/23/Ma_fe17_thief_yunaka.png',
+					'https://cdn.fireemblemwiki.org/b/b4/Ma_fe17_wyvern_knight_rosado.png',
+					'https://cdn.fireemblemwiki.org/0/0a/Ma_fe17_hero_goldmary.png'
+				];
+				
+				const randomIndex = Math.floor(Math.random() * images.length);
+				const imageElement = document.getElementById("random-image");
+				
+				imageElement.src = images[randomIndex];
+			});
+		</script>
 		
         <script>
         // Updates #year, #month, and #day with current information
