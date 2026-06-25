@@ -285,6 +285,7 @@
 		<!-- <img src="https://i.imgur.com/Sfzv5uT.png" class="right-image" /> -->
 		
 		<script>
+			// define images, add to table to add sprites
 			document.addEventListener("DOMContentLoaded", () => {
 				const images = [
 					'https://cdn.fireemblemwiki.org/d/d9/Ma_fe13_lord_lucina_playable.gif',
@@ -304,6 +305,7 @@
 					'https://cdn.fireemblemwiki.org/0/0a/Ma_fe17_hero_goldmary.png'
 				];
 				
+				// grab random image from table
 				const randomIndex = Math.floor(Math.random() * images.length);
 				const imageElement = document.getElementById("random-image");
 				
@@ -312,32 +314,31 @@
 		</script>
 		
         <script>
-        // Updates #year, #month, and #day with current information
-        function update_date() {
-            let d = new Date();
-            document.getElementById("year").innerHTML = d.getFullYear();
-            document.getElementById("month").innerHTML = d.getMonth() + 1;
-            document.getElementById("day").innerHTML = d.getDate();
-        }
-        // Updates #hour and #minute with current information
-        function update_time() {
-            var d = new Date();
-            document.getElementById("hour").innerHTML = d.getHours();
-            document.getElementById("minute").innerHTML = d.getMinutes();
-        }
-        // Runs update_date and update_time functions
-        function update_date_time() {
-            update_date();
-            update_time();
-        }
-        // Update date and time
-        update_date_time();
-        // Make the loading overlay invisible
-        document.getElementById("loading-overlay").style.display = "none";
-        // Every 60 seconds, update the date and time
-        setInterval(function() {
-            update_date_time();
-        }, 60000);
+			function update_date() {
+				let d = new Date();
+				document.getElementById("year").innerHTML = d.getFullYear();
+				document.getElementById("month").innerHTML = String(d.getMonth() + 1).padStart(2, "0");
+				document.getElementById("day").innerHTML = String(d.getDate()).padStart(2, "0");
+			}
+			// Updates #hour and #minute with current information
+			function update_time() {
+				var d = new Date();
+				document.getElementById("hour").innerHTML = String(d.getHours()).padStart(2, "0");
+				document.getElementById("minute").innerHTML = String(d.getMinutes()).padStart(2, "0");
+			}
+			// Runs update_date and update_time functions
+			function update_date_time() {
+				update_date();
+				update_time();
+			}
+			// Update date and time
+			update_date_time();
+			// Make the loading overlay invisible
+			document.getElementById("loading-overlay").style.display = "none";
+			// Every 60 seconds, update the date and time
+			setInterval(function() {
+				update_date_time();
+			}, 60000);
         </script>
     </body>
 </html>
