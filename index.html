@@ -314,31 +314,20 @@
 		</script>
 		
         <script>
-			function update_date() {
+			function update_date_time() {
 				let d = new Date();
 				document.getElementById("year").innerHTML = d.getFullYear();
 				document.getElementById("month").innerHTML = String(d.getMonth() + 1).padStart(2, "0");
 				document.getElementById("day").innerHTML = String(d.getDate()).padStart(2, "0");
-			}
-			// Updates #hour and #minute with current information
-			function update_time() {
-				var d = new Date();
-				document.getElementById("hour").innerHTML = String(d.getHours()).padStart(2, "0");
-				document.getElementById("minute").innerHTML = String(d.getMinutes()).padStart(2, "0");
-			}
-			// Runs update_date and update_time functions
-			function update_date_time() {
-				update_date();
-				update_time();
+				document.getElementById("hour").innerHTML = d.getHours();
+				document.getElementById("minute").innerHTML = d.getMinutes();
 			}
 			// Update date and time
 			update_date_time();
 			// Make the loading overlay invisible
 			document.getElementById("loading-overlay").style.display = "none";
 			// Every 60 seconds, update the date and time
-			setInterval(function() {
-				update_date_time();
-			}, 60000);
+			setInterval(update_date_time, 60000);
         </script>
     </body>
 </html>
