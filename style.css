@@ -57,14 +57,14 @@ header h1 {
 	margin-right: 0px;
 	margin-bottom: 5px;
 	color: #989898; /* Change the greeting text color */
-	font-size: 3em;
+	font-size: clamp(1.5em, 12vw, 3em);
 	font-weight: bold;
 	text-align: left;
 }
 header h2 {
 	margin: 0;
 	color: #888888; /* Change the date text color */
-	font-size: 2em;
+	font-size: clamp(1em, 8vw, 2em);
 	font-weight: regular;
 	text-align: left;
 }
@@ -107,7 +107,7 @@ main nav h5 {
 	margin: 0;
 	padding-right: 5px;
 	color: #686868; /* Change the navigation header text color */
-	font-size: 1.5em;
+	font-size: clamp(0.75em, 6vw, 1.5em);
 	font-weight: 400;
 	text-transform: lowercase;
 	text-align: left;
@@ -117,7 +117,7 @@ main nav h6 {
 	margin: 0;
 	padding-right: 5px;
 	color: #181818; /* Change the navigation header text color */
-	font-size: 1.5em;
+	font-size: clamp(0.75em, 6vw, 1.5em);
 	font-weight: 400;
 	text-transform: lowercase;
 	text-align: left;
@@ -141,7 +141,7 @@ main nav ul li a {
 	margin: 0;
 	padding: 0;
 	color: #E5B75B; /* Change the navigation link text color */
-	font-size: 1.5em;
+	font-size: clamp(0.75em, 6vw, 1.5em);
 	font-weight: 400;
 	text-align: right;
 	text-decoration: none;
@@ -169,7 +169,7 @@ footer {
 footer h3 {
 	margin: 0;
 	color: #787878; /* Change the time color */
-	font-size: 2em;
+	font-size: clamp(1em, 12vw, 2em);
 	font-weight: bold;
 	text-align: right;
 }
