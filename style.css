@@ -1,0 +1,205 @@
+/****************************
+ *
+ * Default Styling
+ *
+ ****************************/
+*,
+*:before,
+*:after {
+	box-sizing: inherit;
+}
+html {
+	box-sizing: border-box;
+}
+html,
+body {
+	height: 100%;
+	margin: 0;
+}
+body {
+	position: relative;
+	font: 1em/1.4 "Microsoft MHei", "Helvetica Neue", "Helvetica", "Arial", sans-serif; /* Replace Source Sans Pro with any font you want */
+}
+/****************************
+ *
+ * Section
+ *
+ ****************************/
+section {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	margin: 0;
+	height: 100%;
+	width: 100%;
+	background-color: #181818; /* Change the background color, should be the same as #loading-overlay */
+	overflow: auto;
+	padding: 25px;
+}
+/****************************
+ *
+ * Header
+ *
+ ****************************/
+header {
+	position: relative;
+	margin-top: 25px;
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 10px;
+	width: 100%;
+	max-width: 500px;
+}
+header h1 {
+	display: inline-block;
+	margin-top: 0;
+	margin-left: 0px;
+	margin-right: 0px;
+	margin-bottom: 5px;
+	color: #989898; /* Change the greeting text color */
+	font-size: 3em;
+	font-weight: bold;
+	text-align: left;
+}
+header h2 {
+	margin: 0;
+	color: #888888; /* Change the date text color */
+	font-size: 2em;
+	font-weight: regular;
+	text-align: left;
+}
+/****************************
+ *
+ * Main
+ *
+ ****************************/
+main nav {
+	padding-top: 10px;
+	margin: 0 auto;
+	padding-left: 0;
+	padding-right: 0;
+	padding-bottom: 10px;
+	border-bottom-width: 2px;
+	border-bottom-style: solid;
+	border-bottom-color: #383838; /* Change the bottom border color */
+	width: 100%; /* Change width and max-width to increase the amount of nav links */
+	max-width: 500px; /* Change width and max-width to increase the amount of nav links */
+}
+main nav:first-child {
+	border-top-width: 2px;
+	border-top-style: solid;
+	border-top-color: #383838; /* Change the top border color */
+}
+main nav {
+	padding-top: 10px;
+	margin: 0 auto;
+	padding-left: 0;
+	padding-right: 0;
+	padding-bottom: 10px;
+	border-bottom-width: 2px;
+	border-bottom-style: solid;
+	border-bottom-color: #383838; /* Change the bottom border color */
+	width: 100%; /* Change width and max-width to increase the amount of nav links */
+	max-width: 500px; /* Change width and max-width to increase the amount of nav links */
+}
+main nav h5 {
+	display: inline-block;
+	margin: 0;
+	padding-right: 5px;
+	color: #686868; /* Change the navigation header text color */
+	font-size: 1.5em;
+	font-weight: 400;
+	text-transform: lowercase;
+	text-align: left;
+}
+main nav h6 {
+	display: inline-block;
+	margin: 0;
+	padding-right: 5px;
+	color: #181818; /* Change the navigation header text color */
+	font-size: 1.5em;
+	font-weight: 400;
+	text-transform: lowercase;
+	text-align: left;
+}
+main nav ul {
+	display: inline-block;
+	margin: 0;
+	padding: 0;
+	list-style-type: none;
+}
+main nav ul li {
+	display: inline-block;
+	padding-top: 0;
+	padding-left: 5px;
+	padding-right: 5px;
+	padding-bottom: 0;
+	margin: 0;
+	text-align: right;
+}
+main nav ul li a {
+	margin: 0;
+	padding: 0;
+	color: #E5B75B; /* Change the navigation link text color */
+	font-size: 1.5em;
+	font-weight: 400;
+	text-align: right;
+	text-decoration: none;
+	text-transform: lowercase;
+}
+main nav ul li a:hover,
+main nav ul li a:focus {
+	color: #E0CCA8; /* Change the navigation link text color on hover and focus */
+	transition: .5s color ease;
+}
+/****************************
+ *
+ * Footer
+ *
+ ****************************/
+footer {
+	position: relative;
+	margin-top: 5px;
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 25px;
+	width: 100%; /* Change width and max-width to increase the amount of nav links */
+	max-width: 500px; /* Change width and max-width to increase the amount of nav links */
+}
+footer h3 {
+	margin: 0;
+	color: #787878; /* Change the time color */
+	font-size: 2em;
+	font-weight: bold;
+	text-align: right;
+}
+/****************************
+ *
+ * Images
+ *
+ ****************************/
+.left-image {
+	position: absolute;
+	bottom: 0px;
+	left: 0px;
+	width: auto;
+	height: 100%;
+	filter: drop-shadow(0px 0px 20px #000000);
+	z-index: 1337;
+}
+.right-image {
+	position: absolute;
+	bottom: 0px;
+	right: 0px;
+	width: auto;
+	height: 100%;
+	filter: drop-shadow(0px 0px 20px #000000);
+	z-index: 1337;
+}
+.map-token {
+	position: fixed;
+	bottom: 10px;
+	right: 10px;
+	max-width: 100%;
+	z-index: 69;
+}
