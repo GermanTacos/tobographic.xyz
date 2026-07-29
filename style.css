@@ -18,7 +18,7 @@ body {
 }
 body {
 	position: relative;
-	font: 1em/1.4 "Microsoft MHei", "Helvetica Neue", "Helvetica", "Arial", sans-serif; /* Replace Source Sans Pro with any font you want */
+	font-family: "Cabin", sans-serif;
 }
 /****************************
  *
