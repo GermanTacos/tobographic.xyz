@@ -68,6 +68,20 @@ header h2 {
 	font-weight: regular;
 	text-align: left;
 }
+header h2 a {
+	margin: 0;
+	padding: 0;
+	color: #E5B75B; /* Change the navigation link text color */
+	font-weight: 400;
+	text-align: right;
+	text-decoration: none;
+	text-transform: lowercase;
+}
+header h2 a:hover,
+header h2 a:focus {
+	color: #E0CCA8; /* Change the navigation link text color on hover and focus */
+	transition: .5s color ease;
+}
 /****************************
  *
  * Main
@@ -90,18 +104,6 @@ main nav:first-child {
 	border-top-style: solid;
 	border-top-color: #383838; /* Change the top border color */
 }
-main nav {
-	padding-top: 10px;
-	margin: 0 auto;
-	padding-left: 0;
-	padding-right: 0;
-	padding-bottom: 10px;
-	border-bottom-width: 2px;
-	border-bottom-style: solid;
-	border-bottom-color: #383838; /* Change the bottom border color */
-	width: 100%; /* Change width and max-width to increase the amount of nav links */
-	max-width: 500px; /* Change width and max-width to increase the amount of nav links */
-}
 main nav h5 {
 	display: inline-block;
 	margin: 0;
@@ -110,7 +112,7 @@ main nav h5 {
 	font-size: clamp(0.75em, 6vw, 1.5em);
 	font-weight: 400;
 	text-transform: lowercase;
-	text-align: left;
+	text-align: right;
 }
 main nav h6 {
 	display: inline-block;
@@ -120,7 +122,7 @@ main nav h6 {
 	font-size: clamp(0.75em, 6vw, 1.5em);
 	font-weight: 400;
 	text-transform: lowercase;
-	text-align: left;
+	text-align: right;
 }
 main nav ul {
 	display: inline-block;
