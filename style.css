@@ -173,6 +173,20 @@ footer h3 {
 	font-weight: bold;
 	text-align: right;
 }
+footer h3 a { /* For subpage back button */
+	margin: 0;
+	padding: 0;
+	color: #E5B75B; /* Change the navigation link text color */
+	font-weight: bold;
+	text-align: right;
+	text-decoration: none;
+	text-transform: lowercase;
+}
+footer h3 a:hover,
+footer h3 a:focus {
+	color: #E0CCA8; /* Change the navigation link text color on hover and focus */
+	transition: .5s color ease;
+}
 /****************************
  *
  * Images
