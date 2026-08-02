@@ -1,0 +1,10 @@
+[
+	{
+		"id": "gba",
+		"name": "Game Boy Advance"
+	},
+	{
+		"id": "pico",
+		"name": "PICO-8"
+	}
+]
