@@ -1,7 +1,55 @@
 [
 	{
+		"id": "gb",
+		"name": "Game Boy"
+	},
+	{
+		"id": "gbc",
+		"name": "Game Boy Color"
+	},
+	{
 		"id": "gba",
 		"name": "Game Boy Advance"
+	},
+	{
+		"id": "fc",
+		"name": "Famicom"
+	},
+	{
+		"id": "sfc",
+		"name": "Super Famicom"
+	},
+	{
+		"id": "poke",
+		"name": "Pokemon Mini"
+	},
+	{
+		"id": "md",
+		"name": "Mega Drive"
+	},
+	{
+		"id": "ngp",
+		"name": "Neo Geo Pocket"
+	},
+	{
+		"id": "lynx",
+		"name": "Atari Lynx"
+	},
+	{
+		"id": "ws",
+		"name": "WonderSwan"
+	},
+	{
+		"id": "n64",
+		"name": "Nintendo 64"
+	},
+	{
+		"id": "ps1",
+		"name": "PlayStation"
+	},
+	{
+		"id": "gcn",
+		"name": "GameCube"
 	},
 	{
 		"id": "pico",
