@@ -8,17 +8,22 @@
 	<title>Overlay Picker</title>
 	
 	<script src="scripts/options.js" defer></script>
+	<script src="scripts/display.js" defer></script>
 </head>
 
 <body>
 	<label for="resolution">Target resolution:</label>
-	<select name="resolution" id="resolution">
-		<option selected value="any">Any</option>
-	</select>
+		<select name="resolution" id="resolution">
+			<option selected value="any">Any</option>
+		</select>
+		
 	<label for="console">Console:</label>
-	<select name="console" id="console">
-		<option selected value="any">Any</option>
-	</select>
+		<select name="console" id="console">
+			<option selected value="any">Any</option>
+		</select>
+		
+	<label for="int-scale">Integer-scaled:</label>
+		<input name="int-scale" id="int-scale" type="checkbox"/>
 </body>
 
 </html>
