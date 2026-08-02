@@ -49,6 +49,9 @@ async function fetchManifest(path) {
 		const dir = path.slice(0, path.lastIndexOf("/") + 1);
 		return {
 			...data,
+			// coerce to real booleans if incorrectly formatted
+			intScale: data.intScale === true || data.intScale === "true",
+			offset: data.offset === true || data.offset === "true",
 			pngUrl: RAW_BASE + dir + data.png,
 			cfgUrl: RAW_BASE + dir + data.cfg,
 			// folder name (e.g. "640-480") is used as resolution key
@@ -104,8 +107,10 @@ function writeCache(data) {
 	}
 }
 
-["resolution", "console", "intScale", "offset"].forEach(id => {
-	document.getElementById(id).addEventListener("change", render);
+// guarantee deferred script has finished executing first
+document.addEventListener("DOMContentLoaded", () => {
+	["resolution", "console", "intScale", "offset"].forEach(id => {
+		document.getElementById(id).addEventListener("change", render);
+	});
+	loadOverlayIndex();
 });
-
-loadOverlayIndex();
