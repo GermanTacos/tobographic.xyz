@@ -1,4 +1,4 @@
-// fetch resolution data from appropriate json entries
+// fetch type data from appropriate json entries
 async function loadData(type) {
 	try {
 		const filePath = "https://tobographic.xyz/utils/overlays/data/"+type+".json";
