@@ -6,6 +6,13 @@
 body {
 	font-family: sans-serif;
 }
+.container {
+	display: flex;
+	gap: 10px;
+}
+.inline-div {
+	display: inline-block;
+}
 #resolution,
 #console {
 	width: max-content;

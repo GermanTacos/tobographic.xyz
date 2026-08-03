@@ -15,21 +15,23 @@
 </head>
 
 <body>
-	<label for="resolution">Target resolution:</label>
-		<select name="resolution" id="resolution">
-			<option selected value="any">Any</option>
-		</select>
-		
-	<label for="console">Console:</label>
-		<select name="console" id="console">
-			<option selected value="any">Any</option>
-		</select>
-		
-	<label for="intScale">Integer-scaled:</label>
-		<input name="intScale" id="intScale" type="checkbox" checked/>
-		
-	<label for="offset">Offset:</label>
-		<input name="offset" id="offset" type="checkbox"/>
+	<div class="container">
+		<div class="inline-div"><label for="resolution">Target resolution:</label>
+			<select name="resolution" id="resolution">
+				<option selected value="any">Any</option>
+			</select></div>
+			
+		<div class="inline-div"><label for="console">Console:</label>
+			<select name="console" id="console">
+				<option selected value="any">Any</option>
+			</select></div>
+			
+		<div class="inline-div"><label for="intScale">Integer-scaled:</label>
+			<input name="intScale" id="intScale" type="checkbox" checked/></div>
+			
+		<div class="inline-div"><label for="offset">Offset:</label>
+			<input name="offset" id="offset" type="checkbox"/></div>
+	</div>
 		
 	<div id="results"></div>
 		
