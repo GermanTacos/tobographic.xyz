@@ -17,6 +17,8 @@ async function loadOverlayIndex() {
 		return;
 	}
 
+	document.getElementById("results").textContent = "Loading overlays…";
+
 	try {
 		// one api call lists every file in the repo
 		const treeRes = await fetch(TREE_URL);
@@ -35,6 +37,7 @@ async function loadOverlayIndex() {
 		console.error("Failed to build overlay index:", error);
 		document.getElementById("results").textContent =
 			"Couldn't load the overlay list — try refreshing in a bit.";
+		return;
 	}
 
 	render();
