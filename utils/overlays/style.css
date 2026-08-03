@@ -51,7 +51,7 @@ body {
 	margin: 0 0 2px;
 	font-size: 12px;
 	line-height: 1.25;
-	color: #676;
+	color: #686868;
 }
 .overlay-meta {
 	margin: 0 0 6px;
@@ -63,6 +63,7 @@ body {
 	width: 100%;
 	height: auto;
 	object-fit: contain;
+	background-color: #E5E5E5;
 }
 .overlay-links {
 	display: flex;
