@@ -35,16 +35,13 @@ function buildCard(overlay) {
 		desc.textContent = overlay.desc;
 		card.appendChild(desc);
 	}
-	
-	if (overlay.intScale == true) {
-		overlay.scale = "int. scaled";
-	} else {
-		overlay.scale = "non int. scaled";
-	}
+
+	const scaleLabel = overlay.intScale ? "int. scaled" : "non int. scaled";
+	const offsetLabel = overlay.offset ? ", offset" : "";
 
 	const meta = document.createElement("p");
 	meta.className = "overlay-meta";
-	meta.textContent = `${overlay.res} \u00b7 ${overlay.sys} \u00b7 ${overlay.scale}`;
+	meta.textContent = `${overlay.res} \u00b7 ${overlay.sys} \u00b7 ${scaleLabel}${offsetLabel}`;
 	card.appendChild(meta);
 
 	const links = document.createElement("div");
