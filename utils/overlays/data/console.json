@@ -10,14 +10,23 @@
 	{
 		"id": "gba",
 		"name": "Game Boy Advance"
+	},{
+		"id": "gbasp",
+		"name": "Game Boy Advance SP"
 	},
 	{
 		"id": "fc",
 		"name": "Famicom"
+	},{
+		"id": "nes",
+		"name": "NES"
 	},
 	{
 		"id": "sfc",
 		"name": "Super Famicom"
+	},{
+		"id": "snes",
+		"name": "SNES"
 	},
 	{
 		"id": "poke",
