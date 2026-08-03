@@ -16,7 +16,7 @@ body {
 }
 #results:not(:has(.overlay-grid)) {
 	font-size: 14px;
-	color: #676;
+	color: #686868;
 	text-align: left;
 	padding: 24px 0;
 }
