@@ -5,7 +5,7 @@ const RAW_BASE = `https://raw.githubusercontent.com/${REPO.owner}/${REPO.name}/r
 const TREE_URL = `https://api.github.com/repos/${REPO.owner}/${REPO.name}/git/trees/${REPO.branch}?recursive=1`;
 
 const CACHE_KEY = "overlay-index-cache";
-const CACHE_TTL_MS = 1000 * 60 * 1; // 1 min
+const CACHE_TTL_MS = 1000 * 60 * 30; // 30 min
 
 let overlays = [];
 
