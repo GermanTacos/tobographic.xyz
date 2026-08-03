@@ -6,6 +6,20 @@
 body {
 	font-family: sans-serif;
 }
+#resolution,
+#console {
+	width: max-content;
+	flex-shrink: 0;
+}
+#results {
+	margin-top: 12px;
+}
+#results:not(:has(.overlay-grid)) {
+	font-size: 14px;
+	color: #676;
+	text-align: left;
+	padding: 24px 0;
+}
 /****************************
  *
  * Grid Display
@@ -15,9 +29,7 @@ body {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 	gap: 16px;
-	margin-top: 12px;
 }
-
 .overlay-card {
 	display: flex;
 	flex-direction: column;
@@ -25,20 +37,44 @@ body {
 	border-radius: 6px;
 	padding: 8px;
 }
-
 .overlay-card h3 {
-	margin: 8px 0 4px;
+	margin: 8px 0 2px;
 	font-size: 14px;
-	line-height: 1.3;
-	min-height: 2.6em; /* 2 lines at this line-height */
+	line-height: 1.2;
+	min-height: 2.4em; /* 2 lines at this line-height */
 	display: -webkit-box;
 	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
 }
-
+.overlay-desc {
+	margin: 0 0 2px;
+	font-size: 12px;
+	line-height: 1.25;
+	color: #676;
+}
+.overlay-meta {
+	margin: 0 0 6px;
+	font-size: 12px;
+	line-height: 1.25;
+	color: #888;
+}
 .overlay-card img {
 	width: 100%;
 	height: auto;
 	object-fit: contain;
+}
+.overlay-links {
+	display: flex;
+	gap: 8px;
+	margin-top: 4px;
+}
+.overlay-links a {
+	font-size: 12px;
+	line-height: 1.2;
+	padding: 2px 8px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	text-decoration: none;
+	color: inherit;
 }
