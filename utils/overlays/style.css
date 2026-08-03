@@ -10,6 +10,13 @@ body {
 	display: flex;
 	gap: 10px;
 }
+@media screen and (max-width: 768px) {
+	.container {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
+}
 .inline-div {
 	display: inline-block;
 }
