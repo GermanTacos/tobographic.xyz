@@ -10,9 +10,14 @@
 	{
 		"id": "gba",
 		"name": "Game Boy Advance"
-	},{
+	},
+	{
 		"id": "gbasp",
 		"name": "Game Boy Advance SP"
+	},
+	{
+		"id": "gbm",
+		"name": "Game Boy Micro"
 	},
 	{
 		"id": "fc",
