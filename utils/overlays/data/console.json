@@ -4,6 +4,14 @@
 		"name": "Game Boy"
 	},
 	{
+		"id": "gbl",
+		"name": "Game Boy Light"
+	},
+	{
+		"id": "gbp",
+		"name": "Game Boy Pocket"
+	},
+	{
 		"id": "gbc",
 		"name": "Game Boy Color"
 	},
