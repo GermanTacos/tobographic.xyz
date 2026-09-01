@@ -3,6 +3,7 @@
 const DEAL_LISTS = {
 	shipUS: { start: "ship from us devices", end: "ship from china devices" },
 	shipCN: { start: "ship from china devices -", end: "work in progress" },
+	couponUS: { start: "us coupons", end: "new user codes" },
 };
 
 const SORT_OPTIONS = [
