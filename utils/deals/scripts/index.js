@@ -1,8 +1,7 @@
 // fetch + parse "Ship from US devices" section from CrownPuff's list of deals
 
 const SHEET_ID = "1x_PmVHiQNHyw5t05peEDG1DcCKDCvH_UPd3p7yCw4xg";
-const GID = "0";
-// use headers=0, gviz tries to auto-detect where a table starts and drops rows otherwise
+const GID = "0"; // use headers=0, gviz tries to auto-detect where a table starts and drops rows otherwise
 const JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&headers=0`;
 
 const START_MARKER = "ship from us devices";
@@ -142,6 +141,7 @@ function parsePrice(str) {
 	return Number.isNaN(n) ? null : n;
 }
 
+// discount% computed from pre- and post- coupon
 function withDiscountPct(deal) {
 	if (deal.preCoupon == null || deal.postCoupon == null || deal.preCoupon === 0) {
 		return { ...deal, discountPct: null };
