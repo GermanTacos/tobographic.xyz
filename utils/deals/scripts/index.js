@@ -4,7 +4,7 @@ const SHEET_ID = "1x_PmVHiQNHyw5t05peEDG1DcCKDCvH_UPd3p7yCw4xg";
 const GID = "0"; // use headers=0, gviz tries to auto-detect where a table starts and drops rows otherwise
 const JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&headers=0`;
 
-let START_MARKER = "us coupons";
+let START_MARKER_PREFIX = "us coupons";
 let END_MARKER_PREFIX = "new user codes";
 
 const dropdown = document.getElementById("showDeals");
@@ -15,7 +15,7 @@ dropdown.addEventListener("change", async (event) => {
 	
 	if (config) {
 		// change marker variables
-		START_MARKER = config.start;
+		START_MARKER_PREFIX = config.start;
 		END_MARKER_PREFIX = config.end;
 
 		// clear cache
@@ -58,7 +58,7 @@ async function loadDealsIndex() {
 
 	try {
 		const rows = await fetchSheetRows();
-		const sectionRows = extractShipFromUSSection(rows);
+		const sectionRows = extractDealsSection(rows);
 		deals = buildDealsFromSection(sectionRows).map(withDiscountPct);
 		writeCache(deals);
 	} catch (error) {
@@ -107,10 +107,10 @@ async function fetchSheetRows() {
 	);
 }
 
-function extractShipFromUSSection(rows) {
-	const startIdx = rows.findIndex(row => row && row[0] && normalize(row[0]).startsWith(START_MARKER));
+function extractDealsSection(rows) {
+	const startIdx = rows.findIndex(row => row && row[0] && normalize(row[0]).startsWith(START_MARKER_PREFIX));
 	if (startIdx === -1) {
-		throw new Error(`Could not find a column-A cell starting with "${START_MARKER}".`);
+		throw new Error(`Could not find a column-A cell starting with "${START_MARKER_PREFIX}".`);
 	}
 
 	let endIdx = rows.length;
@@ -153,7 +153,7 @@ function buildDealsFromSection(sectionRows) {
 		if (!row) continue;
 		
 		const name = (row[colIdx.retroConsole] || "").trim();
-		if (!name || normalize(name).startsWith(START_MARKER)) continue;
+		if (!name || normalize(name).startsWith(START_MARKER_PREFIX)) continue;
 
 		parsed.push({
 			name,
