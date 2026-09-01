@@ -4,8 +4,30 @@ const SHEET_ID = "1x_PmVHiQNHyw5t05peEDG1DcCKDCvH_UPd3p7yCw4xg";
 const GID = "0"; // use headers=0, gviz tries to auto-detect where a table starts and drops rows otherwise
 const JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&headers=0`;
 
-const START_MARKER = "ship from us devices";
-const END_MARKER_PREFIX = "ship from china devices";
+let START_MARKER = "us coupons";
+let END_MARKER_PREFIX = "new user codes";
+
+const dropdown = document.getElementById("showDeals");
+
+dropdown.addEventListener("change", async (event) => {
+	const selectedOption = event.target.value;
+	const config = DEAL_LISTS[selectedOption];
+	
+	if (config) {
+		// change marker variables
+		START_MARKER = config.start;
+		END_MARKER_PREFIX = config.end;
+
+		// clear cache
+		localStorage.removeItem(CACHE_KEY);
+
+		// reset deals array
+		deals = [];
+
+		// force fetch
+		await loadDealsIndex();
+	}
+});
 
 const FIXED_COLUMNS = {
 	preCoupon: 1, // Column B
@@ -86,14 +108,14 @@ async function fetchSheetRows() {
 }
 
 function extractShipFromUSSection(rows) {
-	const startIdx = rows.findIndex(row => normalize(row[0]).includes(START_MARKER));
+	const startIdx = rows.findIndex(row => row && row[0] && normalize(row[0]).startsWith(START_MARKER));
 	if (startIdx === -1) {
-		throw new Error(`Could not find a column-A cell containing "${START_MARKER}".`);
+		throw new Error(`Could not find a column-A cell starting with "${START_MARKER}".`);
 	}
 
 	let endIdx = rows.length;
 	for (let i = startIdx + 1; i < rows.length; i++) {
-		if (normalize(rows[i][0]).startsWith(END_MARKER_PREFIX)) {
+		if (rows[i] && rows[i][0] && normalize(rows[i][0]).startsWith(END_MARKER_PREFIX)) {
 			endIdx = i;
 			break;
 		}
@@ -103,22 +125,35 @@ function extractShipFromUSSection(rows) {
 }
 
 function buildDealsFromSection(sectionRows) {
-	const headerRowIdx = sectionRows.findIndex(row => row.some(cell => cell && cell.trim()));
+	let headerRowIdx = sectionRows.findIndex(row => row.some(cell => cell && cell.trim()));
 	if (headerRowIdx === -1) throw new Error("Section was found but contained no data rows.");
 
-	const normalizedHeader = sectionRows[headerRowIdx].map(normalize);
-
+	let normalizedHeader = sectionRows[headerRowIdx].map(normalize);
+	
+	const hasHeaders = normalizedHeader.some(h => h === "retro console" || h.includes("link"));
+	
 	const colIdx = {};
-	for (const [key, matcher] of Object.entries(COLUMN_MATCHERS)) {
-		colIdx[key] = normalizedHeader.findIndex(matcher);
+	if (hasHeaders) {
+		for (const [key, matcher] of Object.entries(COLUMN_MATCHERS)) {
+			colIdx[key] = normalizedHeader.findIndex(matcher);
+		}
+		headerRowIdx = headerRowIdx + 1; 
+	} else {
+		colIdx.retroConsole = 0;		// Column A
+		colIdx.linkAffiliate = 3;		// Column D
+		colIdx.linkNonAffiliate = 4;	// Column E
+		colIdx.note = 5;           		// Column F
 	}
+	
 	Object.assign(colIdx, FIXED_COLUMNS);
 
 	const parsed = [];
-	for (let i = headerRowIdx + 1; i < sectionRows.length; i++) {
+	for (let i = headerRowIdx; i < sectionRows.length; i++) {
 		const row = sectionRows[i];
+		if (!row) continue;
+		
 		const name = (row[colIdx.retroConsole] || "").trim();
-		if (!name) continue;
+		if (!name || normalize(name).startsWith(START_MARKER)) continue;
 
 		parsed.push({
 			name,
@@ -215,7 +250,7 @@ function writeCache(data) {
 
 // guarantee deferred script has finished executing first
 document.addEventListener("DOMContentLoaded", () => {
-	["sortBy", "reverseSort", "tableView"].forEach(id => {
+	["showDeals", "sortBy", "reverseSort", "tableView"].forEach(id => {
 		document.getElementById(id).addEventListener("change", render);
 	});
 	loadDealsIndex();

@@ -1,5 +1,10 @@
 // populate sort dropdown
 
+const DEAL_LISTS = {
+	shipUS: { start: "ship from us devices", end: "ship from china devices" },
+	shipCN: { start: "ship from china devices", end: "work in progress" },
+};
+
 const SORT_OPTIONS = [
 	{ value: "postCoupon", label: "Price (post-coupon)" },
 	{ value: "preCoupon", label: "Price (pre-coupon)" },
