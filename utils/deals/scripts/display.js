@@ -48,16 +48,31 @@ function renderTable(list) {
 function buildPriceEl(deal) {
 	const price = document.createElement("p");
 	price.className = "deal-price";
-	if (deal.preCoupon != null) {
-		const pre = document.createElement("span");
-		pre.className = "pre";
-		pre.textContent = `$${deal.preCoupon.toFixed(2)}`;
-		price.appendChild(pre);
+
+	if (deal.postCoupon != null) {
+		// highlight deal price in green
+		if (deal.preCoupon != null) {
+			const pre = document.createElement("span");
+			pre.className = "pre";
+			pre.textContent = `$${deal.preCoupon.toFixed(2)}`;
+			price.appendChild(pre);
+		}
+		const post = document.createElement("span");
+		post.className = "post";
+		post.textContent = `$${deal.postCoupon.toFixed(2)}`;
+		price.appendChild(post);
+	} else if (deal.preCoupon != null) {
+		// show original price with no strikethrough
+		const plain = document.createElement("span");
+		plain.textContent = `$${deal.preCoupon.toFixed(2)}`;
+		price.appendChild(plain);
+	} else {
+		const empty = document.createElement("span");
+		empty.className = "deal-empty";
+		empty.textContent = "—";
+		price.appendChild(empty);
 	}
-	const post = document.createElement("span");
-	post.className = "post";
-	post.textContent = deal.postCoupon != null ? `$${deal.postCoupon.toFixed(2)}` : "—";
-	price.appendChild(post);
+
 	return price;
 }
 
@@ -101,8 +116,7 @@ function buildCard(deal) {
 		note.textContent = deal.note;
 		card.appendChild(note);
 	} else {
-		// keep the link row pinned to the bottom even without a note,
-		// same trick the .deal-note margin-bottom:auto relies on
+		// keep link row pinned to bottom
 		const spacer = document.createElement("div");
 		spacer.style.marginBottom = "auto";
 		card.appendChild(spacer);
