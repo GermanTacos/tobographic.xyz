@@ -1,0 +1,140 @@
+/****************************
+ *
+ * Default Styling
+ *
+ ****************************/
+body {
+	font-family: sans-serif;
+}
+.container {
+	display: flex;
+	gap: 10px;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	padding: 8px;
+}
+@media screen and (max-width: 768px) {
+	.container {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 10px;
+	}
+}
+.inline-div {
+	display: inline-block;
+}
+#sortBy {
+	width: max-content;
+	flex-shrink: 0;
+}
+#results {
+	margin-top: 12px;
+}
+#results:not(:has(.deal-grid)) {
+	font-size: 14px;
+	text-align: left;
+	padding: 24px 0;
+}
+/****************************
+ *
+ * Grid Display
+ *
+ ****************************/
+.deal-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+	gap: 16px;
+}
+.deal-card {
+	display: flex;
+	flex-direction: column;
+	border: 1px solid #ccc;
+	border-radius: 6px;
+	padding: 12px;
+}
+.deal-card h3 {
+	margin: 0 0 6px;
+	font-size: 14px;
+	line-height: 1.2;
+	min-height: 2.4em; /* 2 lines at this line-height */
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+.deal-price {
+	margin: 0 0 4px;
+	font-size: 13px;
+	line-height: 1.3;
+}
+.deal-price .pre {
+	text-decoration: line-through;
+	color: #888;
+	margin-right: 6px;
+}
+.deal-price .post {
+	font-weight: bold;
+	color: #1a7f37;
+}
+.deal-discount {
+	margin: 0 0 4px;
+	font-size: 12px;
+	font-weight: bold;
+	color: #1a7f37;
+}
+.deal-note {
+	margin: 0 0 8px;
+	font-size: 12px;
+	line-height: 1.25;
+	color: #686868;
+	margin-bottom: auto; /* pushes the link button group to the bottom */
+}
+.deal-links {
+	display: flex;
+	gap: 8px;
+	margin-top: 6px;
+}
+.deal-links a {
+	font-size: 12px;
+	line-height: 1.2;
+	padding: 2px 8px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	text-decoration: none;
+	color: inherit;
+}
+/****************************
+ *
+ * Table Display
+ *
+ ****************************/
+.deal-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+:where(.deal-table th, .deal-table td) {
+	border: 1px solid #ccc;
+	padding: 6px 10px;
+	text-align: left;
+	vertical-align: middle;
+	font-size: 13px;
+}
+.deal-table th {
+	background: #f5f5f5;
+	font-weight: bold;
+}
+.deal-name {
+	font-size: 14px;
+	font-weight: bold;
+	line-height: 1.2;
+}
+.deal-empty {
+	color: #888;
+}
+.deal-table .deal-price {
+	margin: 0;
+}
+.deal-table .deal-note {
+	margin: 0;
+	max-width: 320px;
+}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+	<title>Deals Database</title>
+
+	<link href="style.css" type="text/css" rel="stylesheet"/>
+
+	<script src="scripts/options.js" defer></script>
+	<script src="scripts/index.js" defer></script>
+	<script src="scripts/display.js" defer></script>
+</head>
+
+<body>
+	<div class="container">
+		<div class="inline-div"><label for="sortBy">Sort by:</label>
+			<select name="sortBy" id="sortBy"></select></div>
+
+		<div class="inline-div"><label for="reverseSort">High to low:</label>
+			<input name="reverseSort" id="reverseSort" type="checkbox"/></div>
+			
+		<div class="inline-div"><label for="tableView">Table view:</label>
+			<input name="tableView" id="tableView" type="checkbox"/></div>
+	</div>
+
+	<div id="results"></div>
+
+	<br>data sourced from <a href="https://www.reddit.com/r/crownpuffdeals/" target="_blank" rel="noopener noreferrer">crownpuff's list of deals</a>
+</body>
+
+</html>
