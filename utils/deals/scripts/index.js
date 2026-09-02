@@ -4,8 +4,8 @@ const SHEET_ID = "1x_PmVHiQNHyw5t05peEDG1DcCKDCvH_UPd3p7yCw4xg";
 const GID = "0"; // use headers=0, gviz tries to auto-detect where a table starts and drops rows otherwise
 const JSON_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}&headers=0`;
 
-let START_MARKER_PREFIX = "us coupons";
-let END_MARKER_PREFIX = "new user codes";
+let START_MARKER_PREFIX = "ship from us devices";
+let END_MARKER_PREFIX = "ship from china devices -";
 
 const dropdown = document.getElementById("showDeals");
 
