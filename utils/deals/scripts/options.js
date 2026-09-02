@@ -4,6 +4,8 @@ const DEAL_LISTS = {
 	shipUS: { start: "ship from us devices", end: "ship from china devices" },
 	shipCN: { start: "ship from china devices -", end: "work in progress" },
 	couponUS: { start: "us coupons", end: "new user codes" },
+	cpus: { start: "cpus", end: "headphones" },
+	headphones: { start: "headphones", end: "dollar express" },
 };
 
 const SORT_OPTIONS = [
