@@ -6,6 +6,7 @@ const DEAL_LISTS = {
 	couponUS: { start: "us coupons", end: "new user codes" },
 	cpus: { start: "cpus", end: "headphones" },
 	headphones: { start: "headphones", end: "dollar express" },
+	earlyBirdAnbernic: { start: "anbernic early birds" },
 };
 
 const SORT_OPTIONS = [
