@@ -18,6 +18,20 @@
 	/****************************
 	 * Data
 	 ****************************/
+	// ESPN sends whole games as "4" and half games as "4.5"; always show one decimal.
+	// Anything that isn't a number (the leader's "-") is left alone.
+	function formatGamesBehind(value) {
+		const text = String(value);
+		const n = Number(text);
+		return text.trim() !== "" && Number.isFinite(n) ? n.toFixed(1) : text;
+	}
+
+	// Win percentage the way it's written in standings: .500, .333, 1.000
+	function formatWinPct(pct) {
+		if (pct === null) return "–";
+		return pct >= 1 ? "1.000" : pct.toFixed(3).replace(/^0/, "");
+	}
+
 	// Flattens one ESPN standings entry into the fields the table needs.
 	// ESPN's stat naming isn't documented, so each stat is matched on any of its identifiers.
 	function readEntry(entry) {
@@ -38,16 +52,19 @@
 			return Number.isFinite(n) ? n : null;
 		};
 
+		const pct = number("winPercent", "PCT");
+
 		return {
 			id: team.id,
 			name: team.shortDisplayName || team.displayName || team.abbreviation,
 			abbr: team.abbreviation || team.shortDisplayName,
 			logo: team.logos?.[0]?.href,
 			seed: number("playoffSeed"),
-			pct: number("winPercent", "PCT") ?? 0,
+			pct: pct ?? 0, // for sorting when ESPN sends no seed
 			wins: show("wins", "W"),
 			losses: show("losses", "L"),
-			gb: show("gamesBehind", "GB"),
+			winPct: formatWinPct(pct),
+			gb: formatGamesBehind(show("gamesBehind", "GB")),
 			last10: show("lasttengames", "Last Ten Games", "L10"),
 			streak: String(show("streak", "STRK"))
 		};
@@ -83,6 +100,7 @@
 			<td><div class="team" data-team="${esc(row.id)}">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name">${esc(row.name)}</span><span class="abbr">${esc(row.abbr)}</span></div></td>
 			<td>${esc(row.wins)}</td>
 			<td>${esc(row.losses)}</td>
+			<td>${esc(row.winPct)}</td>
 			<td>${esc(row.gb)}</td>
 			<td>${esc(row.last10)}</td>
 			<td class="streak ${streakClass}">${esc(row.streak)}</td>
@@ -96,7 +114,7 @@
 		conf.innerHTML = `<h5>${esc(group.name)}</h5>
 			<table>
 				<thead>
-					<tr><th scope="col">#</th><th scope="col">team</th><th scope="col">w</th><th scope="col">l</th><th scope="col">gb</th><th scope="col">l10</th><th scope="col">streak</th></tr>
+					<tr><th scope="col">#</th><th scope="col">team</th><th scope="col">w</th><th scope="col">l</th><th scope="col">pct</th><th scope="col">gb</th><th scope="col">l10</th><th scope="col">streak</th></tr>
 				</thead>
 				<tbody>${group.rows.map(renderRow).join("")}</tbody>
 			</table>`;
