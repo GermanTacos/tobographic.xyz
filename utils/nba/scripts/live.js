@@ -1,3 +1,5 @@
+"use strict";
+
 /****************************
  *
  * Live games
@@ -12,31 +14,34 @@
 		"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard",
 		"https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"
 	];
-	const SUMMARY_URLS = [
-		"https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/summary?region=us&lang=en&contentorigin=espn&event=",
-		"https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event="
+	const summaryUrls = (eventId) => [
+		`https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/summary?region=us&lang=en&contentorigin=espn&event=${eventId}`,
+		`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`
 	];
 
 	const LIVE_REFRESH_MS = 60000; // how often to check which teams are playing
 	const CARD_REFRESH_MS = 5000;  // how often the open overlay updates
 
-	let activeDot = null;
-	let cardTimer = null;
-	let started = false;
+	const liveGames = new Map(); // team id -> scoreboard event, for games in progress
+	let activeDot = null;        // the dot whose overlay is open
+	let session = 0;             // bumped on every open and close, so stale polls stop themselves
 
 	const card = document.createElement("div");
+	card.id = "live-card";
 	card.className = "live-card";
-	card.setAttribute("role", "status");
+	card.setAttribute("role", "tooltip");
 	card.hidden = true;
-	document.body.appendChild(card);
+	document.body.append(card);
+
+	const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 	/****************************
 	 * Dots
-	 * One scoreboard request every minute marks the teams currently playing.
+	 * One scoreboard request a minute marks the teams currently playing.
 	 ****************************/
 	function addDots() {
-		document.querySelectorAll(".team[data-team]").forEach((team) => {
-			if (team.querySelector(".live")) return;
+		for (const team of document.querySelectorAll(".team[data-team]")) {
+			if (team.querySelector(".live")) continue;
 			const dot = document.createElement("span");
 			dot.className = "live";
 			dot.dataset.team = team.dataset.team;
@@ -44,8 +49,8 @@
 			dot.setAttribute("role", "button");
 			dot.setAttribute("aria-label", "live game: show score");
 			dot.hidden = true;
-			team.appendChild(dot);
-		});
+			team.append(dot);
+		}
 	}
 
 	async function refreshLive() {
@@ -53,44 +58,98 @@
 		const board = await getJSON(SCOREBOARD_URLS);
 		if (!board) return; // keep what's showing if the request failed
 
-		const liveTeams = new Map(); // team id -> event id
-		for (const event of board.events || []) {
-			const state = event.status && event.status.type && event.status.type.state;
-			const comp = event.competitions && event.competitions[0];
-			if (state !== "in" || !comp) continue;
-			for (const c of comp.competitors || []) liveTeams.set(String(c.team.id), event.id);
+		liveGames.clear();
+		for (const event of board.events ?? []) {
+			if (event.status?.type?.state !== "in") continue;
+			for (const c of event.competitions?.[0]?.competitors ?? []) liveGames.set(String(c.team?.id), event);
 		}
 
-		document.querySelectorAll(".live").forEach((dot) => {
-			const eventId = liveTeams.get(dot.dataset.team);
-			dot.hidden = !eventId;
-			dot.dataset.event = eventId || "";
-		});
+		for (const dot of document.querySelectorAll(".live")) dot.hidden = !liveGames.has(dot.dataset.team);
 
 		// The game behind an open overlay may have just ended.
-		if (activeDot && activeDot.hidden) closeCard();
+		if (activeDot?.hidden) closeCard();
 	}
 
 	/****************************
 	 * Score overlay
-	 * Opens on hover, focus or tap. Refreshes every few seconds while open.
+	 * Opens on hover, focus or tap. Shows the last scoreboard data straight away, then
+	 * polls the game summary (score, clock and latest play) while it stays open.
 	 ****************************/
 	function openCard(dot) {
 		if (activeDot === dot) return;
 		closeCard();
 		activeDot = dot;
-		card.innerHTML = `<div class="status">loading…</div>`;
+		dot.setAttribute("aria-describedby", card.id);
 		card.hidden = false;
-		positionCard();
-		refreshCard();
-		cardTimer = setInterval(refreshCard, CARD_REFRESH_MS);
+
+		const event = liveGames.get(dot.dataset.team);
+		if (event) renderCard(dot, event.competitions[0], event.status);
+		poll(dot, ++session);
 	}
 
 	function closeCard() {
-		clearInterval(cardTimer);
-		cardTimer = null;
+		session++;
+		activeDot?.removeAttribute("aria-describedby");
 		activeDot = null;
 		card.hidden = true;
+	}
+
+	// One request at a time: the next wait only starts once the last request has finished.
+	async function poll(dot, id) {
+		while (id === session) {
+			try {
+				await refreshCard(dot, id);
+			} catch (err) {
+				console.warn("Overlay update failed:", err); // keep polling; the next response may be fine
+			}
+			await sleep(CARD_REFRESH_MS);
+		}
+	}
+
+	async function refreshCard(dot, id) {
+		const event = liveGames.get(dot.dataset.team);
+		if (!event || document.hidden) return;
+
+		const summary = await getJSON(summaryUrls(event.id));
+		if (id !== session) return; // the overlay closed or moved on while the request ran
+
+		const comp = summary?.header?.competitions?.[0] ?? event.competitions[0];
+		renderCard(dot, comp, event.status, latestPlay(summary));
+	}
+
+	// ESPN lists plays oldest to newest; take the highest sequence number to be safe.
+	function latestPlay(summary) {
+		const plays = summary?.plays;
+		if (!plays?.length) return null;
+		const sequence = (p) => Number(p.sequenceNumber);
+		return plays.reduce((a, b) => (sequence(b) > sequence(a) ? b : a), plays[plays.length - 1]);
+	}
+
+	function periodLabel(n) {
+		if (n <= 4) return "q" + n;
+		return n === 5 ? "ot" : (n - 4) + "ot";
+	}
+
+	function renderCard(dot, comp, fallbackStatus, play) {
+		const me = comp.competitors.find((c) => String(c.team?.id) === dot.dataset.team);
+		const opp = comp.competitors.find((c) => c !== me);
+		if (!me || !opp) return;
+
+		const label = (c) => c.team?.abbreviation || c.team?.shortDisplayName || c.team?.displayName;
+		const side = (c) => `<span class="side">${esc(label(c))} <b>${esc(c.score ?? "–")}</b></span>`;
+		const type = (comp.status ?? fallbackStatus)?.type;
+		const detail = type?.shortDetail || type?.detail;
+
+		let playHtml = "";
+		if (play?.text) {
+			const when = [play.period?.number && periodLabel(play.period.number), play.clock?.displayValue].filter(Boolean).join(" ");
+			playHtml = `<div class="play${play.scoringPlay ? " scoring" : ""}">${when ? `<span class="when">${esc(when)}</span>` : ""}${esc(play.text)}</div>`;
+		}
+
+		card.innerHTML = `<div class="matchup">${side(me)}<span class="sep">${me.homeAway === "home" ? "vs" : "@"}</span>${side(opp)}</div>
+			${detail ? `<div class="status">${esc(detail)}</div>` : ""}
+			${playHtml}`;
+		positionCard();
 	}
 
 	function positionCard() {
@@ -105,101 +164,51 @@
 		card.style.top = Math.max(margin, top) + "px";
 	}
 
-	function periodLabel(n) {
-		if (n <= 4) return "q" + n;
-		return n === 5 ? "ot" : (n - 4) + "ot";
-	}
-
-	// ESPN lists plays oldest to newest; take the highest sequence number to be safe.
-	function latestPlay(summary) {
-		const plays = summary && summary.plays;
-		if (!plays || !plays.length) return null;
-		const seq = (p) => Number(p.sequenceNumber);
-		if (plays.every((p) => Number.isFinite(seq(p)))) {
-			return plays.reduce((a, b) => (seq(b) > seq(a) ? b : a));
-		}
-		return plays[plays.length - 1];
-	}
-
-	function renderCard(dot, event, summary) {
-		const comp = event && event.competitions && event.competitions[0];
-		if (!comp) return;
-		const me = comp.competitors.find((c) => String(c.team.id) === dot.dataset.team);
-		const opp = comp.competitors.find((c) => c !== me);
-		if (!me || !opp) return;
-
-		const sep = me.homeAway === "home" ? "vs" : "@";
-		const detail = event.status && event.status.type && (event.status.type.shortDetail || event.status.type.detail);
-		const play = latestPlay(summary);
-
-		let playHtml = "";
-		if (play && play.text) {
-			const when = [play.period && play.period.number ? periodLabel(play.period.number) : "", play.clock && play.clock.displayValue]
-				.filter(Boolean).join(" ");
-			playHtml = `<div class="play${play.scoringPlay ? " scoring" : ""}">${when ? `<span class="when">${esc(when)}</span>` : ""}${esc(play.text)}</div>`;
-		}
-
-		card.innerHTML = `<div class="matchup">
-				<span class="side">${esc(me.team.abbreviation)} <b>${esc(me.score ?? "–")}</b></span>
-				<span class="sep">${sep}</span>
-				<span class="side">${esc(opp.team.abbreviation)} <b>${esc(opp.score ?? "–")}</b></span>
-			</div>
-			${detail ? `<div class="status">${esc(detail)}</div>` : ""}
-			${playHtml}`;
-		positionCard();
-	}
-
-	async function refreshCard() {
-		const dot = activeDot;
-		if (!dot || document.hidden) return;
-		const eventId = dot.dataset.event;
-		if (!eventId) return;
-
-		// Scoreboard for score and clock, game summary for the latest play.
-		const [board, summary] = await Promise.all([getJSON(SCOREBOARD_URLS), getJSON(SUMMARY_URLS.map((u) => u + eventId))]);
-		if (dot !== activeDot) return; // pointer moved on while the request was in flight
-
-		const event = board && (board.events || []).find((e) => String(e.id) === String(eventId));
-		if (event) renderCard(dot, event, summary);
-	}
-
 	/****************************
 	 * Input
 	 * Delegated on document: the dots are created after the page loads.
 	 ****************************/
-	document.addEventListener("mouseover", (e) => {
-		const dot = e.target.closest(".live");
-		if (dot) openCard(dot);
+	const dotAt = (e) => e.target.closest?.(".live");
+	const isTouch = (e) => e.pointerType === "touch";
+
+	// Hover uses pointer events, not mouse events: after a tap, touch browsers replay
+	// emulated mouse events (including a mouseout) that would close the overlay again.
+	document.addEventListener("pointerover", (e) => {
+		const dot = dotAt(e);
+		if (dot && !isTouch(e)) openCard(dot);
 	});
-	document.addEventListener("mouseout", (e) => {
-		const dot = e.target.closest(".live");
-		if (dot && !(e.relatedTarget && dot.contains(e.relatedTarget))) closeCard();
+	document.addEventListener("pointerout", (e) => {
+		const dot = dotAt(e);
+		if (dot && !isTouch(e) && !dot.contains(e.relatedTarget)) closeCard();
 	});
+	// Keyboard focus.
 	document.addEventListener("focusin", (e) => {
-		const dot = e.target.closest(".live");
+		const dot = dotAt(e);
 		if (dot) openCard(dot);
 	});
 	document.addEventListener("focusout", (e) => {
-		if (e.target.closest(".live")) closeCard();
+		const dot = dotAt(e);
+		if (dot && !dot.contains(e.relatedTarget)) closeCard();
 	});
 	// Touch has no hover: a tap opens the overlay, a tap anywhere else closes it.
 	document.addEventListener("pointerdown", (e) => {
-		const dot = e.target.closest(".live");
-		if (dot && e.pointerType !== "mouse") openCard(dot);
-		else if (!dot) closeCard();
+		const dot = dotAt(e);
+		if (!dot) closeCard();
+		else if (isTouch(e)) openCard(dot);
 	});
 	document.addEventListener("keydown", (e) => {
 		if (e.key === "Escape") closeCard();
 	});
+	document.addEventListener("visibilitychange", () => {
+		if (!document.hidden) refreshLive(); // catch up straight away after the tab was in the background
+	});
 	window.addEventListener("resize", positionCard);
-	window.addEventListener("scroll", positionCard, true); // capture: the page scrolls inside <section>
+	window.addEventListener("scroll", positionCard, { capture: true, passive: true }); // capture: the page scrolls inside <section>
 
 	/****************************
 	 * Start
 	 ****************************/
 	function start() {
-		if (started) return;
-		started = true;
 		addDots();
 		refreshLive();
 		setInterval(refreshLive, LIVE_REFRESH_MS);
