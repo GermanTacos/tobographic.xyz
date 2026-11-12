@@ -338,6 +338,10 @@ footer.back h3 a {
 @media (max-width: 860px) {
 	.conferences {
 		grid-template-columns: 1fr;
+		row-gap: 0;
+	}
+	.conf + .conf { /* stacked: West's bottom line is the only divider, like the base nav blocks */
+		border-top-width: 0;
 	}
 }
 @media (max-width: 520px) {
