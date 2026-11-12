@@ -1,9 +1,13 @@
+"use strict";
+
 /****************************
  *
  * Shared helpers
  * Plain functions used by standings.js and live.js. Load this file first.
  *
  ****************************/
+
+const REQUEST_TIMEOUT_MS = 8000;
 
 // Escapes text before it goes into an innerHTML template.
 function esc(value) {
@@ -16,7 +20,7 @@ function esc(value) {
 async function getJSON(urls) {
 	for (const url of urls) {
 		try {
-			const res = await fetch(url, { cache: "no-store" });
+			const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
 			if (res.ok) return await res.json();
 		} catch (err) {
 			console.warn("Request failed:", url, err);
