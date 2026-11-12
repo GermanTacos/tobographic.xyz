@@ -1,0 +1,223 @@
+/****************************
+ *
+ * Standings page
+ * Loaded after the base style.css. Only adds what the base file doesn't cover.
+ *
+ ****************************/
+
+/****************************
+ *
+ * Wide layout
+ * Base header, main and footer cap at 500px; two tables need more room.
+ * Auto margins center the content when it fits and keep the top reachable
+ * when it doesn't (justify-content: center would clip it on small screens).
+ *
+ ****************************/
+section.wide {
+	justify-content: flex-start;
+}
+.wide > header {
+	margin-top: auto;
+	max-width: 1000px;
+}
+.wide > footer {
+	margin-bottom: auto;
+	max-width: 1000px;
+}
+.standings {
+	margin: 0 auto;
+	width: 100%;
+	max-width: 1000px;
+}
+
+/****************************
+ *
+ * Conferences
+ *
+ ****************************/
+.conferences {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 25px 40px;
+}
+.conf {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	border-top-width: 2px;
+	border-top-style: solid;
+	border-top-color: #383838; /* Change the top border color */
+	border-bottom-width: 2px;
+	border-bottom-style: solid;
+	border-bottom-color: #383838; /* Change the bottom border color */
+	min-width: 0;
+}
+.conf h5 {
+	margin: 0 0 6px 0;
+	color: #686868; /* Change the conference header text color */
+	font-size: clamp(0.75em, 6vw, 1.5em);
+	font-weight: 400;
+	text-transform: lowercase;
+}
+
+/****************************
+ *
+ * Table
+ *
+ ****************************/
+.conf table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: clamp(0.8em, 3.6vw, 1.1em);
+	font-variant-numeric: tabular-nums;
+}
+.conf th,
+.conf td {
+	padding: 6px 6px;
+	text-align: right;
+	white-space: nowrap;
+}
+.conf th {
+	color: #686868; /* Change the column header text color */
+	font-weight: 400;
+	text-transform: lowercase;
+}
+.conf td {
+	color: #888888; /* Change the stat text color */
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: #282828; /* Change the row divider color */
+}
+.conf th:nth-child(2),
+.conf td:nth-child(2) {
+	text-align: left;
+	width: 100%;
+}
+.conf th:first-child,
+.conf td:first-child {
+	width: 2.4em;
+	text-align: center;
+	border-left-width: 3px;
+	border-left-style: solid;
+	border-left-color: transparent;
+}
+
+/* Seed + team */
+.conf td:first-child {
+	font-weight: bold;
+	color: #989898; /* Change the seed text color */
+}
+.team {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #989898; /* Change the team name text color */
+	font-weight: 700;
+}
+.team img {
+	width: 1.5em;
+	height: 1.5em;
+	object-fit: contain;
+}
+.team .abbr {
+	display: none;
+}
+
+/* Playoff berths: gold matches the site's link color, steel blue stays out of its way */
+.conf tr.direct td:first-child {
+	color: #E5B75B; /* Change the playoff seed color */
+	border-left-color: #E5B75B;
+}
+.conf tr.playin td:first-child {
+	color: #7FA3BA; /* Change the play-in seed color */
+	border-left-color: #7FA3BA;
+}
+
+/* Eliminated from the top 10: dim the row so the berths stand out */
+.conf tr.out td,
+.conf tr.out .team {
+	color: #585858; /* Change the out-of-contention text color */
+}
+.conf tr.out img {
+	opacity: 0.45;
+}
+
+/* Wins, losses and streaks: green and red, dimmed to match on faded rows */
+.conf td:nth-child(3),
+.conf td.streak.W {
+	color: #8DB48D; /* Change the win color */
+}
+.conf td:nth-child(4),
+.conf td.streak.L {
+	color: #C27A7A; /* Change the loss color */
+}
+.conf tr.out td:nth-child(3),
+.conf tr.out td.streak.W {
+	color: #5F7F5F; /* Change the faded win color */
+}
+.conf tr.out td:nth-child(4),
+.conf tr.out td.streak.L {
+	color: #8A5858; /* Change the faded loss color */
+}
+
+/****************************
+ *
+ * Key and message
+ *
+ ****************************/
+.key {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px 20px;
+	margin: 15px 0 0 0;
+	color: #686868; /* Change the key text color */
+	font-size: clamp(0.75em, 3.6vw, 1em);
+	text-transform: lowercase;
+}
+.key[hidden],
+.message[hidden] {
+	display: none;
+}
+.swatch {
+	display: inline-block;
+	width: 3px;
+	height: 0.9em;
+	margin-right: 8px;
+	vertical-align: -0.1em;
+}
+.swatch.direct {
+	background-color: #E5B75B;
+}
+.swatch.playin {
+	background-color: #7FA3BA;
+}
+.message {
+	margin: 0;
+	padding-top: 10px;
+	color: #686868; /* Change the loading and error text color */
+	font-size: clamp(0.75em, 6vw, 1.5em);
+	text-transform: lowercase;
+}
+
+/****************************
+ *
+ * Small screens
+ *
+ ****************************/
+@media (max-width: 860px) {
+	.conferences {
+		grid-template-columns: 1fr;
+	}
+}
+@media (max-width: 520px) {
+	.team .name {
+		display: none;
+	}
+	.team .abbr {
+		display: inline;
+	}
+	.conf th,
+	.conf td {
+		padding-left: 4px;
+		padding-right: 4px;
+	}
+}
