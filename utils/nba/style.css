@@ -277,7 +277,7 @@ footer.back h3 a {
 .live-card {
 	position: fixed;
 	z-index: 100;
-	min-width: 230px;
+	min-width: 270px;
 	max-width: min(340px, calc(100vw - 20px));
 	padding: 10px 14px;
 	background-color: #202020; /* Change the overlay background color */
@@ -292,28 +292,47 @@ footer.back h3 a {
 .live-card[hidden] {
 	display: none;
 }
+/* Top row: logo, name, score, vs or @, score, name, logo */
 .live-card .matchup {
-	display: flex;
-	align-items: baseline;
-	justify-content: space-between;
+	display: grid;
+	grid-template-columns: 1fr auto 1fr; /* equal outer columns keep vs/@ dead center, under the clock */
+	align-items: center;
 	gap: 12px;
 	color: #989898; /* Change the team abbreviation color */
 	font-weight: bold;
 }
+.live-card .side {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.live-card .side:last-child {
+	justify-content: flex-end;
+}
 .live-card .side b {
-	margin-left: 4px;
 	color: #E0CCA8; /* Change the score color */
 	font-size: 1.3em;
+}
+.live-card .logo {
+	flex: none;
+	width: 1.6em;
+	height: 1.6em;
+	object-fit: contain;
 }
 .live-card .sep {
 	color: #686868; /* Change the vs/@ color */
 	font-weight: 400;
 }
 .live-card .status {
-	margin-top: 2px;
+	margin-top: 4px;
 	color: #888888; /* Change the game clock color */
+	text-align: center;
 }
+/* Latest play: headshot, time tag, text, points */
 .live-card .play {
+	display: flex;
+	align-items: center;
+	gap: 10px;
 	margin-top: 8px;
 	padding-top: 8px;
 	border-top-width: 1px;
@@ -322,12 +341,23 @@ footer.back h3 a {
 	color: #989898; /* Change the play text color */
 	line-height: 1.35;
 }
-.live-card .play.scoring {
-	color: #E5B75B; /* Change the scoring play color */
+.live-card .shot {
+	flex: none;
+	width: 2.4em;
+	height: 2.4em;
+	border-radius: 50%;
+	background-color: #2A2A2A; /* Change the headshot backdrop color */
+	object-fit: cover;
+	object-position: 50% 12%; /* ESPN headshots are wide with the face near the top */
 }
 .live-card .when {
 	margin-right: 8px;
 	color: #686868; /* Change the play time color */
+}
+.live-card .pts {
+	margin-left: 6px;
+	color: #8DB48D; /* Change the points color, same as the win color */
+	font-weight: bold;
 }
 
 /****************************

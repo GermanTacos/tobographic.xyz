@@ -18,6 +18,7 @@
 		`https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/summary?region=us&lang=en&contentorigin=espn&event=${eventId}`,
 		`https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=${eventId}`
 	];
+	const HEADSHOT_URL = "https://a.espncdn.com/i/headshots/nba/players/full/";
 
 	const LIVE_REFRESH_MS = 60000; // how often to check which teams are playing
 	const CARD_REFRESH_MS = 5000;  // how often the open overlay updates
@@ -25,6 +26,7 @@
 	const liveGames = new Map(); // team id -> scoreboard event, for games in progress
 	let activeDot = null;        // the dot whose overlay is open
 	let session = 0;             // bumped on every open and close, so stale polls stop themselves
+	let cardHtml = "";           // what the overlay shows now, so unchanged updates don't redraw it
 
 	const card = document.createElement("div");
 	card.id = "live-card";
@@ -91,6 +93,7 @@
 		session++;
 		activeDot?.removeAttribute("aria-describedby");
 		activeDot = null;
+		cardHtml = "";
 		card.hidden = true;
 	}
 
@@ -125,30 +128,89 @@
 		return plays.reduce((a, b) => (sequence(b) > sequence(a) ? b : a), plays[plays.length - 1]);
 	}
 
+	/****************************
+	 * Formatting
+	 ****************************/
+	// 1-4 are quarters, then 1ot, 2ot, 3ot…
 	function periodLabel(n) {
-		if (n <= 4) return "q" + n;
-		return n === 5 ? "ot" : (n - 4) + "ot";
+		return n <= 4 ? "q" + n : (n - 4) + "ot";
 	}
 
+	// "1st OT" and "2nd Overtime" become "1ot" and "2ot".
+	function shortOT(text) {
+		return String(text).replace(/\b(\d)(?:st|nd|rd|th)\s+(?:OT|overtime)\b/gi, "$1ot");
+	}
+
+	// Turns ESPN's game status into the same shape as the play tags: "q3 7:41", "2ot 1:12".
+	// Reads the structured period and clock when present, otherwise the "7:41 - 3rd" text.
+	function statusLabel(status) {
+		const name = status?.type?.name;
+		if (name === "STATUS_HALFTIME") return "halftime";
+
+		const text = status?.type?.shortDetail || status?.type?.detail || "";
+		let period = Number(status?.period) || 0;
+		let clock = status?.displayClock;
+		if (!period || !clock) {
+			const m = /^(\d+:\d+(?:\.\d+)?)\s*-\s*(\d+)?(?:st|nd|rd|th)?\s*(OT)?/i.exec(text);
+			if (m && (m[2] || m[3])) {
+				clock = m[1];
+				period = m[3] ? 4 + (Number(m[2]) || 1) : Number(m[2]);
+			}
+		}
+
+		if (name === "STATUS_END_PERIOD" && period) return "end " + periodLabel(period);
+		if (period && clock) return `${periodLabel(period)} ${clock}`;
+		// Anything else (delays and so on): show ESPN's wording, lightly tidied.
+		return shortOT(text).replace(/\bOT\b/gi, "1ot").replace(/\bEnd of (\d)(?:st|nd|rd|th)\b/i, "end q$1");
+	}
+
+	// The table already has every team's logo, so reuse it; fall back to the feed's own.
+	function teamLogo(team) {
+		const fromTable = team?.id && document.querySelector(`.team[data-team="${CSS.escape(String(team.id))}"] img`)?.getAttribute("src");
+		return fromTable || team?.logo || team?.logos?.[0]?.href;
+	}
+
+	/****************************
+	 * Rendering
+	 ****************************/
 	function renderCard(dot, comp, fallbackStatus, play) {
 		const me = comp.competitors.find((c) => String(c.team?.id) === dot.dataset.team);
 		const opp = comp.competitors.find((c) => c !== me);
 		if (!me || !opp) return;
 
-		const label = (c) => c.team?.abbreviation || c.team?.shortDisplayName || c.team?.displayName;
-		const side = (c) => `<span class="side">${esc(label(c))} <b>${esc(c.score ?? "–")}</b></span>`;
-		const type = (comp.status ?? fallbackStatus)?.type;
-		const detail = type?.shortDetail || type?.detail;
+		// Left side reads logo, name, score; the right side mirrors it: score, name, logo.
+		const side = (c, mirrored) => {
+			const logo = teamLogo(c.team);
+			const parts = [
+				logo ? `<img class="logo" src="${esc(logo)}" alt="">` : "",
+				`<span class="abbr">${esc(c.team?.abbreviation || c.team?.shortDisplayName || c.team?.displayName)}</span>`,
+				`<b>${esc(c.score ?? "–")}</b>`
+			];
+			return `<span class="side">${(mirrored ? parts.reverse() : parts).join("")}</span>`;
+		};
+
+		const status = statusLabel(comp.status ?? fallbackStatus);
 
 		let playHtml = "";
 		if (play?.text) {
+			const athleteId = play.participants?.[0]?.athlete?.id;
 			const when = [play.period?.number && periodLabel(play.period.number), play.clock?.displayValue].filter(Boolean).join(" ");
-			playHtml = `<div class="play${play.scoringPlay ? " scoring" : ""}">${when ? `<span class="when">${esc(when)}</span>` : ""}${esc(play.text)}</div>`;
+			const points = play.scoringPlay && play.scoreValue > 0 ? `<span class="pts">+${esc(play.scoreValue)}</span>` : "";
+			playHtml = `<div class="play">${athleteId ? `<img class="shot" src="${HEADSHOT_URL}${esc(athleteId)}.png" alt="">` : ""}<div>${when ? `<span class="when">${esc(when)}</span>` : ""}${esc(shortOT(play.text))}${points}</div></div>`;
 		}
 
-		card.innerHTML = `<div class="matchup">${side(me)}<span class="sep">${me.homeAway === "home" ? "vs" : "@"}</span>${side(opp)}</div>
-			${detail ? `<div class="status">${esc(detail)}</div>` : ""}
+		const html = `<div class="matchup">${side(me)}<span class="sep">${me.homeAway === "home" ? "vs" : "@"}</span>${side(opp, true)}</div>
+			${status ? `<div class="status">${esc(status)}</div>` : ""}
 			${playHtml}`;
+
+		if (html === cardHtml) return; // nothing new; skip the redraw so images don't flicker
+		cardHtml = html;
+		card.innerHTML = html;
+		// Not every player has a headshot: drop the image rather than show a broken one.
+		card.querySelector(".shot")?.addEventListener("error", (e) => {
+			e.target.remove();
+			positionCard();
+		}, { once: true });
 		positionCard();
 	}
 
