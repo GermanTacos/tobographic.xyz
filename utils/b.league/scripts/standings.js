@@ -12,7 +12,7 @@
 (() => {
 	const STANDINGS_URL = "https://www.bleague.jp/standings/";
 	// Fallbacks tried after the direct request, e.g. (url) => "https://your-proxy.example/?url=" + encodeURIComponent(url)
-	const PROXIES = [];
+	const PROXIES = [(url) => "https://bleague-proxy.tiny-river-02cf.workers.dev/?url=" + encodeURIComponent(url)];
 	const REQUEST_TIMEOUT_MS = 8000;
 	const REFRESH_MS = 60000;
 
