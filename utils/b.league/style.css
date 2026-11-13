@@ -1,0 +1,190 @@
+/****************************
+ *
+ * B.LEAGUE page
+ * Loaded after the site-wide style.css. Only adds what the base file doesn't cover.
+ *
+ ****************************/
+
+/****************************
+ *
+ * Wide layout
+ * Base header, main and footer cap at 500px; two tables need more room.
+ * Auto margins center the content when it fits and keep the top reachable
+ * when it doesn't (justify-content: center would clip it on small screens).
+ * The padding keeps the same 25px of breathing room the base margins give.
+ *
+ ****************************/
+section.wide {
+	justify-content: flex-start;
+}
+.wide > header {
+	margin-top: auto;
+	padding-top: 25px;
+	max-width: 1000px;
+}
+.wide > footer {
+	margin-bottom: auto;
+	padding-bottom: 25px;
+	max-width: 1000px;
+}
+.standings {
+	margin: 0 auto;
+	width: 100%;
+	max-width: 1000px;
+}
+
+/****************************
+ *
+ * Conferences
+ *
+ ****************************/
+.conferences {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 25px 40px;
+}
+.conf {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	border-top: 2px solid #383838; /* Change the top and bottom border color */
+	border-bottom: 2px solid #383838;
+	min-width: 0;
+}
+.conf h5 {
+	margin: 0 0 6px 0;
+	color: #888888; /* Change the conference header text color, same as the header h2 */
+	font-size: clamp(0.75em, 6vw, 1.5em);
+	font-weight: 400;
+	text-transform: lowercase;
+}
+
+/****************************
+ *
+ * Table
+ *
+ ****************************/
+.conf table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: clamp(0.75em, 3.6vw, 1em);
+	font-variant-numeric: tabular-nums;
+	text-transform: lowercase;
+}
+.conf th,
+.conf td {
+	padding: 6px 6px;
+	text-align: right;
+	white-space: nowrap;
+}
+.conf th {
+	color: #686868; /* Change the column header text color */
+	font-weight: 400;
+}
+.conf td {
+	color: #888888; /* Change the stat text color */
+	border-top: 1px solid #282828; /* Change the row divider color */
+}
+.conf th:nth-child(2),
+.conf td:nth-child(2) {
+	text-align: left;
+	width: 100%;
+}
+.conf th:first-child,
+.conf td:first-child {
+	width: 2.4em;
+	text-align: center;
+}
+.conf td:first-child {
+	font-weight: bold;
+	color: #989898; /* Change the seed text color */
+}
+.team {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #989898; /* Change the team name text color */
+	font-weight: bold;
+}
+.team img {
+	width: 1.5em;
+	height: 1.5em;
+	object-fit: contain;
+}
+.team .abbr {
+	display: none;
+}
+
+/* Wins, losses and streaks: green and red */
+.conf td:nth-child(3),
+.conf td.streak.W {
+	color: #8DB48D; /* Change the win color */
+}
+.conf td:nth-child(4),
+.conf td.streak.L {
+	color: #C27A7A; /* Change the loss color */
+}
+
+/****************************
+ *
+ * Footer: back button
+ * Variant for pages whose footer holds a back link instead of the clock.
+ *
+ ****************************/
+footer.back {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 5px 20px;
+}
+footer.back h3 {
+	margin-left: auto;
+	font-size: clamp(0.75em, 8vw, 1.5em);
+}
+footer.back h3 a {
+	font-weight: 400;
+}
+
+/****************************
+ *
+ * Message
+ *
+ ****************************/
+.message[hidden] {
+	display: none;
+}
+.message {
+	margin: 0;
+	padding-top: 10px;
+	color: #686868; /* Change the loading and error text color */
+	font-size: clamp(0.75em, 6vw, 1.5em);
+	text-transform: lowercase;
+}
+
+/****************************
+ *
+ * Small screens
+ *
+ ****************************/
+@media (max-width: 860px) {
+	.conferences {
+		grid-template-columns: 1fr;
+		row-gap: 0;
+	}
+	.conf + .conf { /* stacked: West's bottom line is the only divider */
+		border-top-width: 0;
+	}
+}
+@media (max-width: 520px) {
+	.team .name {
+		display: none;
+	}
+	.team .abbr {
+		display: inline;
+	}
+	.conf th,
+	.conf td {
+		padding-left: 4px;
+		padding-right: 4px;
+	}
+}
