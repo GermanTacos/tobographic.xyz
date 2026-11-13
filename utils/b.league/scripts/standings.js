@@ -28,6 +28,49 @@
 	/****************************
 	 * Data
 	 ****************************/
+	// English names, keyed by the short Japanese name bleague.jp shows in the club cell: [nickname for the table, full club name for the tooltip].
+	// The page has no English names, so this is maintained by hand. Anything missing falls back to the Japanese short name
+	// (and is logged to the console so it can be added here).
+	const TEAMS = {
+		"北海道": ["Levanga", "Levanga Hokkaido"],
+		"仙台": ["89ers", "Sendai 89ers"],
+		"秋田": ["Happinets", "Akita Northern Happinets"],
+		"茨城": ["Robots", "Ibaraki Robots"],
+		"宇都宮": ["Brex", "Utsunomiya Brex"],
+		"群馬": ["Crane Thunders", "Gunma Crane Thunders"],
+		"A千葉": ["Altiri", "Altiri Chiba"],
+		"千葉J": ["Jets", "Chiba Jets"],
+		"A東京": ["Alvark", "Alvark Tokyo"],
+		"東京SR": ["SunRockers", "SunRockers Shibuya"], "SR渋谷": ["SunRockers", "SunRockers Shibuya"], "渋谷": ["SunRockers", "SunRockers Shibuya"],
+		"川崎": ["Brave Thunders", "Kawasaki Brave Thunders"],
+		"横浜BC": ["B-Corsairs", "Yokohama B-Corsairs"],
+		"富山": ["Grouses", "Toyama Grouses"],
+		"信州": ["Brave Warriors", "Shinshu Brave Warriors"],
+		"三遠": ["NeoPhoenix", "San-en NeoPhoenix"],
+		"三河": ["Seahorses", "Seahorses Mikawa"],
+		"名古屋D": ["Dolphins", "Nagoya Diamond Dolphins"],
+		"滋賀": ["Lakestars", "Shiga Lakestars"],
+		"京都": ["Hannaryz", "Kyoto Hannaryz"],
+		"大阪": ["Evessa", "Osaka Evessa"],
+		"神戸": ["Storks", "Kobe Storks"],
+		"島根": ["Susanoo Magic", "Shimane Susanoo Magic"],
+		"広島": ["Dragonflies", "Hiroshima Dragonflies"],
+		"佐賀": ["Ballooners", "Saga Ballooners"],
+		"長崎": ["Velca", "Nagasaki Velca"],
+		"琉球": ["Golden Kings", "Ryukyu Golden Kings"]
+	};
+	const missing = new Set();
+
+	// What the table shows for a club: the English short name if known, otherwise the Japanese short name.
+	function clubLabel(row) {
+		const en = TEAMS[row.abbr];
+		if (!en && !missing.has(row.abbr)) {
+			missing.add(row.abbr);
+			console.warn("No English name for club:", row.abbr, row.name);
+		}
+		return { label: en?.[0] ?? row.abbr ?? row.name, title: en?.[1] ?? row.name };
+	}
+
 	async function getHTML() {
 		const urls = [STANDINGS_URL, ...PROXIES.map((proxy) => proxy(STANDINGS_URL))];
 		for (const url of urls) {
@@ -44,10 +87,17 @@
 	const clean = (s) => String(s ?? "").replace(/\s+/g, "");
 	const tidy = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
 
-	// The club cell reads like "宇都宮 宇都宮ブレックス宇都宮": short name, then the full name with the short one repeated.
+	// The club cell holds the logo, the full name and the short name run together with no space ("広島ドラゴンフライズ広島").
+	// The short name is found by checking the known list first, then the logo's alt text, then the first word.
 	function readClub(cell) {
-		const [abbr = "", rest = ""] = tidy(cell?.textContent).split(" ");
-		const full = rest.endsWith(abbr) && rest.length > abbr.length ? rest.slice(0, -abbr.length) : rest || abbr;
+		let words = tidy(cell?.textContent).split(" ").filter(Boolean);
+		const joined = words.join("");
+		const alt = tidy(cell?.querySelector("img")?.getAttribute("alt"));
+		const known = Object.keys(TEAMS).filter((k) => joined.endsWith(k)).sort((a, b) => b.length - a.length)[0];
+		const abbr = known || (alt && joined.endsWith(alt) ? alt : "") || words[0] || "";
+		if (words.length > 1 && words[0] === abbr) words = words.slice(1); // short name written once up front as well
+		const rest = words.join("");
+		const full = rest.endsWith(abbr) && rest.length > abbr.length ? rest.slice(0, -abbr.length) : rest;
 		const src = cell?.querySelector("img")?.getAttribute("src");
 		return { name: full, abbr, logo: src ? new URL(src, STANDINGS_URL).href : "" };
 	}
@@ -70,6 +120,7 @@
 				...readClub(cells[col["クラブ"]]),
 				wins: text("勝"),
 				losses: text("負"),
+				diff: Number(text("得失点差").replace(/[,+]/g, "")) || 0,
 				pct: text("勝率"),
 				gb: text("差"),
 				last5: text("過去5試合"),
@@ -106,13 +157,40 @@
 	}));
 
 	/****************************
+	 * Playoff berths
+	 * Per the B.LEAGUE format page: the top 3 clubs in each division qualify, plus the 2 best records among the
+	 * other 20 clubs, compared across both divisions. Ties are broken here by point differential only; the
+	 * league's real order (head-to-head first) isn't computed, so a close wildcard race may differ from the official one.
+	 ****************************/
+	const DIRECT_PER_DIVISION = 3;
+	const WILDCARDS = 2;
+
+	const winRate = (row) => {
+		const w = Number(row.wins), l = Number(row.losses);
+		return w + l > 0 ? w / (w + l) : 0;
+	};
+
+	function markBerths(groups) {
+		const pool = [];
+		for (const group of groups) {
+			group.rows.forEach((row, i) => {
+				if (i < DIRECT_PER_DIVISION) row.berth = "direct";
+				else pool.push(row);
+			});
+		}
+		pool.sort((a, b) => winRate(b) - winRate(a) || b.diff - a.diff);
+		pool.forEach((row, i) => { row.berth = i < WILDCARDS ? "wildcard" : "out"; });
+	}
+
+	/****************************
 	 * Rendering
 	 ****************************/
 	function renderRow(row) {
+		const club = clubLabel(row);
 		const streakClass = /^[WL]/i.test(row.streak) ? row.streak[0].toUpperCase() : "";
-		return `<tr>
+		return `<tr class="${row.berth ?? ""}">
 			<td>${esc(row.seed)}</td>
-			<td><div class="team">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name">${esc(row.name)}</span><span class="abbr">${esc(row.abbr)}</span></div></td>
+			<td><div class="team">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name" title="${esc(club.title)}">${esc(club.label)}</span></div></td>
 			<td>${esc(row.wins)}</td>
 			<td>${esc(row.losses)}</td>
 			<td>${esc(row.pct)}</td>
@@ -137,6 +215,8 @@
 	}
 
 	function draw(groups) {
+		markBerths(groups);
+		document.getElementById("key").hidden = false;
 		document.getElementById("conferences").replaceChildren(...groups.map(renderGroup));
 	}
 
