@@ -1,0 +1,350 @@
+/****************************
+ *
+ * Unrivaled page
+ * Loaded after the site-wide style.css. Only adds what the base file doesn't cover.
+ * One table of eight clubs fits the base 500px column, so unlike the nba and b.league pages
+ * there is no wide layout and no two-column grid.
+ *
+ ****************************/
+
+.standings {
+	margin: 0 auto;
+	width: 100%;
+}
+
+/****************************
+ *
+ * Table group
+ *
+ ****************************/
+.conf {
+	padding-top: 10px;
+	padding-bottom: 10px;
+	border-top-width: 2px;
+	border-top-style: solid;
+	border-top-color: #383838; /* Change the top border color */
+	border-bottom-width: 2px;
+	border-bottom-style: solid;
+	border-bottom-color: #383838; /* Change the bottom border color */
+	min-width: 0;
+}
+.conf h5 {
+	margin: 0 0 6px 0;
+	color: #888888; /* Change the table header text color, same as the header h2 */
+	font-size: clamp(0.75em, 6vw, 1.5em);
+	font-weight: 400;
+	text-transform: lowercase;
+}
+
+/****************************
+ *
+ * Table
+ *
+ ****************************/
+.conf table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: clamp(0.75em, 3.6vw, 1em);
+	font-variant-numeric: tabular-nums;
+	text-transform: lowercase;
+}
+.conf th,
+.conf td {
+	padding: 6px 6px;
+	text-align: right;
+	white-space: nowrap;
+}
+.conf th {
+	color: #686868; /* Change the column header text color */
+	font-weight: 400;
+}
+.conf td {
+	color: #888888; /* Change the stat text color */
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: #282828; /* Change the row divider color */
+}
+.conf th:nth-child(2),
+.conf td:nth-child(2) {
+	text-align: left;
+	width: 100%;
+}
+.conf th:first-child,
+.conf td:first-child {
+	width: 2.4em;
+	text-align: center;
+	border-left-width: 3px;
+	border-left-style: solid;
+	border-left-color: transparent;
+}
+
+/* Seed + team */
+.conf td:first-child {
+	font-weight: bold;
+	color: #989898; /* Change the seed text color */
+}
+.team {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #989898; /* Change the team name text color */
+	font-weight: bold;
+}
+.team img {
+	width: 1.5em;
+	height: 1.5em;
+	object-fit: contain;
+}
+.team .name { /* a long nickname gets an ellipsis instead of spilling out of the table */
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.team .abbr {
+	display: none;
+}
+.conf td:nth-child(2) {
+	max-width: 0; /* lets the team cell shrink below its content so the ellipsis can kick in */
+	overflow: hidden;
+}
+
+/* Playoff berths: gold for the top two seeds (first-round bye), steel blue for the other four */
+.conf tr.direct td:first-child {
+	color: #E5B75B; /* Change the bye seed color */
+	border-left-color: #E5B75B;
+}
+.conf tr.playoff td:first-child {
+	color: #7FA3BA; /* Change the playoff seed color */
+	border-left-color: #7FA3BA;
+}
+
+/* Out of the playoff picture: dim the row so the berths stand out */
+.conf tr.out td,
+.conf tr.out .team {
+	color: #585858; /* Change the out-of-contention text color */
+}
+.conf tr.out img {
+	opacity: 0.45;
+}
+
+/* Wins, losses and strks: green and red, dimmed to match on faded rows */
+.conf td:nth-child(3),
+.conf td.strk.W {
+	color: #8DB48D; /* Change the win color */
+}
+.conf td:nth-child(4),
+.conf td.strk.L {
+	color: #C27A7A; /* Change the loss color */
+}
+.conf tr.out td:nth-child(3),
+.conf tr.out td.strk.W {
+	color: #5F7F5F; /* Change the faded win color */
+}
+.conf tr.out td:nth-child(4),
+.conf tr.out td.strk.L {
+	color: #8A5858; /* Change the faded loss color */
+}
+
+/****************************
+ *
+ * Footer: back button
+ * Variant for pages whose footer holds a back link instead of the clock.
+ * Sizes and weights match jaw.fyi. Use <footer class="back">. If other pages adopt
+ * this, move this block into the site-wide style.css.
+ *
+ ****************************/
+footer.back {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 5px 20px;
+}
+footer.back h3 {
+	margin-left: auto; /* keeps the link on the right even when the key is hidden or wraps */
+	font-size: clamp(0.75em, 8vw, 1.5em);
+}
+footer.back h3 a {
+	font-weight: 400;
+}
+
+/****************************
+ *
+ * Key and message
+ *
+ ****************************/
+.key {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px 20px;
+	margin: 0;
+	color: #686868; /* Change the key text color */
+	font-size: clamp(0.75em, 3.6vw, 1em);
+	text-transform: lowercase;
+}
+.key[hidden],
+.message[hidden] {
+	display: none;
+}
+.swatch {
+	display: inline-block;
+	width: 3px;
+	height: 0.9em;
+	margin-right: 8px;
+	vertical-align: -0.1em;
+}
+.swatch.direct {
+	background-color: #E5B75B;
+}
+.swatch.playoff {
+	background-color: #7FA3BA;
+}
+.message {
+	margin: 0;
+	padding-top: 10px;
+	color: #686868; /* Change the loading and error text color */
+	font-size: clamp(0.75em, 6vw, 1.5em);
+	text-transform: lowercase;
+}
+
+/****************************
+ *
+ * Live games
+ *
+ ****************************/
+.live {
+	position: relative;
+	flex: none;
+	width: 0.6em;
+	height: 0.6em;
+	margin-left: 2px;
+	border-radius: 50%;
+	background-color: #D45B5B; /* Change the live dot color */
+	cursor: pointer;
+	animation: live-pulse 1.6s ease-out infinite;
+}
+.live[hidden] {
+	display: none;
+}
+.live::after { /* larger tap and hover target around the dot */
+	content: "";
+	position: absolute;
+	top: -8px;
+	right: -8px;
+	bottom: -8px;
+	left: -8px;
+}
+.live:focus-visible {
+	outline: 2px solid #E5B75B;
+	outline-offset: 3px;
+}
+@keyframes live-pulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(237, 237, 237, 0.75); /* Change the pulse color */
+	}
+	70% {
+		box-shadow: 0 0 0 0.5em rgba(237, 237, 237, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(237, 237, 237, 0);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.live {
+		animation: none;
+		box-shadow: 0 0 0 2px rgba(237, 237, 237, 0.5);
+	}
+}
+
+/* Score overlay */
+.live-card {
+	position: fixed;
+	z-index: 100;
+	min-width: 270px;
+	max-width: min(340px, calc(100vw - 20px));
+	padding: 10px 14px;
+	background-color: #202020; /* Change the overlay background color */
+	border-width: 2px;
+	border-style: solid;
+	border-color: #383838; /* Change the overlay border color */
+	box-shadow: 0px 0px 20px #000000;
+	font-size: clamp(0.75em, 3.6vw, 1em);
+	text-transform: lowercase;
+	pointer-events: none;
+}
+.live-card[hidden] {
+	display: none;
+}
+/* Top row: logo, name, score, vs or @, score, name, logo */
+.live-card .matchup {
+	display: grid;
+	grid-template-columns: 1fr auto 1fr; /* equal outer columns keep vs/@ dead center, under the clock */
+	align-items: center;
+	gap: 12px;
+	color: #989898; /* Change the team abbreviation color */
+	font-weight: bold;
+}
+.live-card .side {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.live-card .side:last-child {
+	justify-content: flex-end;
+}
+.live-card .side b {
+	color: #E0CCA8; /* Change the score color */
+	font-size: 1.3em;
+}
+.live-card .logo {
+	flex: none;
+	width: 1.6em;
+	height: 1.6em;
+	object-fit: contain;
+}
+.live-card .sep {
+	color: #686868; /* Change the vs/@ color */
+	font-weight: 400;
+}
+.live-card .status {
+	margin-top: 4px;
+	color: #888888; /* Change the game clock color */
+	text-align: center;
+}
+/* Latest play: time tag and text */
+.live-card .play {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: #383838; /* Change the divider color */
+	color: #989898; /* Change the play text color */
+	line-height: 1.35;
+}
+.live-card .when {
+	margin-right: 8px;
+	color: #686868; /* Change the play time color */
+}
+
+/****************************
+ *
+ * Small screens
+ *
+ ****************************/
+@media (max-width: 520px) {
+	.team .name {
+		display: none;
+	}
+	.team .abbr {
+		display: inline;
+	}
+	.conf th,
+	.conf td {
+		padding-left: 4px;
+		padding-right: 4px;
+	}
+}
