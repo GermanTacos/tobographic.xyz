@@ -3,15 +3,12 @@
 /****************************
  *
  * Shared helpers
- * Used by standings.js and live.js. Load this file first.
+ * Plain functions used by standings.js and live.js. Load this file first.
  *
  ****************************/
 
-// bleague.jp and its data bucket only allow cross-origin reads from bleague.jp itself, so requests go through your
-// own proxy (the Cloudflare Worker). Paste its address here. With no proxy, requests go straight out and will fail.
-const PROXIES = [
-	(url) => "https://bleague-proxy.tiny-river-02cf.workers.dev/?url=" + encodeURIComponent(url)
-];
+// bleague.jp and its game-data bucket only answer to bleague.jp itself, so every request goes through this proxy.
+const PROXY = "https://bleague-proxy.tiny-river-02cf.workers.dev/?url=";
 const REQUEST_TIMEOUT_MS = 8000;
 
 // Escapes text before it goes into an innerHTML template.
@@ -21,26 +18,22 @@ function esc(value) {
 	}[c]));
 }
 
-// Returns the body text of the first request that succeeds, or null.
+// Returns the body text of a URL, or null if the request failed.
 async function fetchText(url) {
-	const urls = PROXIES.length ? PROXIES.map((proxy) => proxy(url)) : [url];
-	for (const target of urls) {
-		try {
-			const res = await fetch(target, { cache: "no-store", signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
-			if (res.ok) return await res.text();
-		} catch (err) {
-			console.warn("Request failed:", url, err);
-		}
+	try {
+		const res = await fetch(PROXY + encodeURIComponent(url), { cache: "no-store", signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+		return res.ok ? await res.text() : null;
+	} catch (err) {
+		console.warn("Request failed:", url, err);
+		return null;
 	}
-	return null;
 }
 
+// Returns the parsed JSON of a URL, or null if the request or the parsing failed.
 async function fetchJSON(url) {
-	const text = await fetchText(url);
 	try {
-		return text ? JSON.parse(text) : null;
-	} catch (err) {
-		console.warn("Bad JSON:", url, err);
+		return JSON.parse(await fetchText(url));
+	} catch {
 		return null;
 	}
 }

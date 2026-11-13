@@ -3,170 +3,158 @@
 /****************************
  *
  * B.LEAGUE Premier standings
- * Fetches the official bleague.jp standings page and reads its tables (east and west).
- * There is no JSON API, so this parses server-rendered HTML, fetched through the proxy set in helpers.js.
- * Until a fetch works, the page shows a small sample so the layout can still be seen.
+ * Reads the official bleague.jp standings page (server-rendered HTML; there is no JSON API) and renders
+ * one table per conference. Knows nothing about live games: when the tables are drawn it fires
+ * "standings:rendered", and live.js (if loaded) takes it from there.
  *
  ****************************/
 (() => {
 	const STANDINGS_URL = "https://www.bleague.jp/standings/";
-	const REFRESH_MS = 60000;
+	const REFRESH_MS = 60000; // standings move when games end
 
-	let showingReal = false;
+	/****************************
+	 * Clubs
+	 * The page has no English names, so they're kept here by hand, keyed by the short Japanese name in the
+	 * club cell: [nickname for the table, full name for the tooltip, three-letter code for small screens and
+	 * the live overlay]. A club that's missing falls back to its Japanese short name and is logged to the console.
+	 ****************************/
+	const SR = ["SunRockers", "SunRockers Shibuya", "TSR"];
+	const TEAMS = {
+		"北海道": ["Levanga", "Levanga Hokkaido", "HOK"],
+		"仙台": ["89ers", "Sendai 89ers", "SEN"],
+		"秋田": ["Happinets", "Akita Northern Happinets", "AKI"],
+		"茨城": ["Robots", "Ibaraki Robots", "IBA"],
+		"宇都宮": ["Brex", "Utsunomiya Brex", "UTS"],
+		"群馬": ["Crane Thunders", "Gunma Crane Thunders", "GUN"],
+		"A千葉": ["Altiri", "Altiri Chiba", "ACH"],
+		"千葉J": ["Jets", "Chiba Jets", "CHJ"],
+		"A東京": ["Alvark", "Alvark Tokyo", "ATK"],
+		"東京SR": SR, "SR渋谷": SR, "渋谷": SR,
+		"川崎": ["Brave Thunders", "Kawasaki Brave Thunders", "KAW"],
+		"横浜BC": ["B-Corsairs", "Yokohama B-Corsairs", "YOK"],
+		"富山": ["Grouses", "Toyama Grouses", "TOY"],
+		"信州": ["Brave Warriors", "Shinshu Brave Warriors", "SHN"],
+		"三遠": ["NeoPhoenix", "San-en NeoPhoenix", "SAN"],
+		"三河": ["Seahorses", "Seahorses Mikawa", "MIK"],
+		"名古屋D": ["Dolphins", "Nagoya Diamond Dolphins", "NGD"],
+		"滋賀": ["Lakestars", "Shiga Lakestars", "SHG"],
+		"京都": ["Hannaryz", "Kyoto Hannaryz", "KYO"],
+		"大阪": ["Evessa", "Osaka Evessa", "OSA"],
+		"神戸": ["Storks", "Kobe Storks", "KOB"],
+		"島根": ["Susanoo Magic", "Shimane Susanoo Magic", "SHM"],
+		"広島": ["Dragonflies", "Hiroshima Dragonflies", "HIR"],
+		"佐賀": ["Ballooners", "Saga Ballooners", "SAG"],
+		"長崎": ["Velca", "Nagasaki Velca", "NGS"],
+		"琉球": ["Golden Kings", "Ryukyu Golden Kings", "RYU"]
+	};
+	const unknownClubs = new Set();
+
+	function clubNames(row) {
+		const [nickname, title, code] = TEAMS[row.abbr] ?? [];
+		if (!nickname && !unknownClubs.has(row.abbr)) {
+			unknownClubs.add(row.abbr);
+			console.warn("No English name for club:", row.abbr, row.name);
+		}
+		return { nickname: nickname ?? row.abbr, title: title ?? row.name, code: code ?? row.abbr };
+	}
 
 	/****************************
 	 * Data
 	 ****************************/
-	// English names, keyed by the short Japanese name bleague.jp shows in the club cell: [nickname for the table, full club name for the tooltip].
-	// The page has no English names, so this is maintained by hand. Anything missing falls back to the Japanese short name
-	// (and is logged to the console so it can be added here).
-	const TEAMS = {
-		"北海道": ["Levanga", "Levanga Hokkaido"],
-		"仙台": ["89ers", "Sendai 89ers"],
-		"秋田": ["Happinets", "Akita Northern Happinets"],
-		"茨城": ["Robots", "Ibaraki Robots"],
-		"宇都宮": ["Brex", "Utsunomiya Brex"],
-		"群馬": ["Crane Thunders", "Gunma Crane Thunders"],
-		"A千葉": ["Altiri", "Altiri Chiba"],
-		"千葉J": ["Jets", "Chiba Jets"],
-		"A東京": ["Alvark", "Alvark Tokyo"],
-		"東京SR": ["SunRockers", "SunRockers Shibuya"], "SR渋谷": ["SunRockers", "SunRockers Shibuya"], "渋谷": ["SunRockers", "SunRockers Shibuya"],
-		"川崎": ["Brave Thunders", "Kawasaki Brave Thunders"],
-		"横浜BC": ["B-Corsairs", "Yokohama B-Corsairs"],
-		"富山": ["Grouses", "Toyama Grouses"],
-		"信州": ["Brave Warriors", "Shinshu Brave Warriors"],
-		"三遠": ["NeoPhoenix", "San-en NeoPhoenix"],
-		"三河": ["Seahorses", "Seahorses Mikawa"],
-		"名古屋D": ["Dolphins", "Nagoya Diamond Dolphins"],
-		"滋賀": ["Lakestars", "Shiga Lakestars"],
-		"京都": ["Hannaryz", "Kyoto Hannaryz"],
-		"大阪": ["Evessa", "Osaka Evessa"],
-		"神戸": ["Storks", "Kobe Storks"],
-		"島根": ["Susanoo Magic", "Shimane Susanoo Magic"],
-		"広島": ["Dragonflies", "Hiroshima Dragonflies"],
-		"佐賀": ["Ballooners", "Saga Ballooners"],
-		"長崎": ["Velca", "Nagasaki Velca"],
-		"琉球": ["Golden Kings", "Ryukyu Golden Kings"]
-	};
-	const missing = new Set();
-
-	// What the table shows for a club: the English short name if known, otherwise the Japanese short name.
-	function clubLabel(row) {
-		const en = TEAMS[row.abbr];
-		if (!en && !missing.has(row.abbr)) {
-			missing.add(row.abbr);
-			console.warn("No English name for club:", row.abbr, row.name);
-		}
-		return { label: en?.[0] ?? row.abbr ?? row.name, title: en?.[1] ?? row.name };
-	}
-
-	const clean = (s) => String(s ?? "").replace(/\s+/g, "");
 	const tidy = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
 
 	// The club cell holds the logo, the full name and the short name run together with no space ("広島ドラゴンフライズ広島").
-	// The short name is found by checking the known list first, then the logo's alt text, then the first word.
+	// The short name is found from the known list first, then the logo's alt text, then the first word.
 	function readClub(cell) {
 		let words = tidy(cell?.textContent).split(" ").filter(Boolean);
 		const joined = words.join("");
-		const alt = tidy(cell?.querySelector("img")?.getAttribute("alt"));
+		const img = cell?.querySelector("img");
+		const alt = tidy(img?.getAttribute("alt"));
 		const known = Object.keys(TEAMS).filter((k) => joined.endsWith(k)).sort((a, b) => b.length - a.length)[0];
 		const abbr = known || (alt && joined.endsWith(alt) ? alt : "") || words[0] || "";
 		if (words.length > 1 && words[0] === abbr) words = words.slice(1); // short name written once up front as well
 		const rest = words.join("");
-		const full = rest.endsWith(abbr) && rest.length > abbr.length ? rest.slice(0, -abbr.length) : rest;
-		const src = cell?.querySelector("img")?.getAttribute("src");
-		return { name: full, abbr, logo: src ? new URL(src, STANDINGS_URL).href : "" };
+		const src = img?.getAttribute("src");
+		return {
+			abbr,
+			name: rest.endsWith(abbr) && rest.length > abbr.length ? rest.slice(0, -abbr.length) : rest,
+			logo: src ? new URL(src, STANDINGS_URL).href : ""
+		};
 	}
 
 	// Columns are found by their Japanese header text, so extra columns or reordering don't matter.
 	function readTable(table) {
-		const head = [...table.querySelectorAll("tr")].find((tr) => tr.querySelector("th"));
+		const trs = [...table.querySelectorAll("tr")];
+		const head = trs.find((tr) => tr.querySelector("th"));
 		if (!head) return [];
 		const col = {};
-		[...head.children].forEach((th, i) => { col[clean(th.textContent)] ??= i; });
+		[...head.children].forEach((th, i) => { col[tidy(th.textContent).replace(/ /g, "")] ??= i; });
 		if (["順位", "クラブ", "勝", "負"].some((k) => !(k in col))) return [];
 
-		const rows = [];
-		for (const tr of table.querySelectorAll("tr")) {
-			const cells = [...tr.querySelectorAll("td")];
-			if (cells.length < 4) continue;
+		return trs.map((tr) => [...tr.querySelectorAll("td")]).filter((cells) => cells.length >= 4).map((cells, i) => {
 			const text = (key) => tidy(cells[col[key]]?.textContent).replace(/^-+$/, "–") || "–";
-			rows.push({
-				seed: parseInt(text("順位"), 10) || rows.length + 1,
+			return {
+				seed: parseInt(text("順位"), 10) || i + 1,
 				...readClub(cells[col["クラブ"]]),
 				wins: text("勝"),
 				losses: text("負"),
-				diff: Number(text("得失点差").replace(/[,+]/g, "")) || 0,
 				pct: text("勝率"),
 				gb: text("差"),
 				last5: text("過去5試合"),
-				strk: text("連勝/連敗")
-			});
-		}
-		return rows;
+				strk: text("連勝/連敗"),
+				diff: Number(text("得失点差").replace(/[,+]/g, "")) || 0 // wildcard tiebreak only
+			};
+		});
 	}
 
-	// Returns [{ name, rows }] with west first so east lands on the right.
-	// A table belongs to the nearest heading above it that says 東地区 or 西地区; the first table per side wins.
+	// Returns [{ name, rows }], one item per conference, western first so eastern lands on the right.
+	// A table belongs to the nearest heading above it that says 西地区 or 東地区; the first table per side wins.
 	function parseStandings(html) {
 		const doc = new DOMParser().parseFromString(html, "text/html");
-		const groups = new Map();
+		const names = { "西": "western conference", "東": "eastern conference" };
+		const groups = {};
 		let side = "";
 		for (const el of doc.querySelectorAll("h1, h2, h3, h4, h5, h6, table")) {
-			if (el.tagName !== "TABLE") {
-				const m = /(東|西)地区/.exec(el.textContent);
-				if (m) side = m[1] === "東" ? "eastern conference" : "western conference";
-				continue;
-			}
-			if (!side || groups.has(side)) continue;
-			const rows = readTable(el);
-			if (rows.length) groups.set(side, rows);
+			if (el.tagName !== "TABLE") side = names[/(東|西)地区/.exec(el.textContent)?.[1]] ?? side;
+			else if (side && !groups[side]?.length) groups[side] = readTable(el);
 		}
-		return ["western conference", "eastern conference"].filter((n) => groups.has(n)).map((name) => ({ name, rows: groups.get(name) }));
+		return Object.values(names).filter((name) => groups[name]?.length).map((name) => ({ name, rows: groups[name] }));
 	}
-
-	// Placeholder numbers, only shown when bleague.jp can't be reached.
-	const SAMPLE = ["western conference", "eastern conference"].map((name, g) => ({
-		name,
-		rows: [["広島", "広島ドラゴンフライズ"], ["名古屋D", "名古屋ダイヤモンドドルフィンズ"], ["琉球", "琉球ゴールデンキングス"], ["長崎", "長崎ヴェルカ"]]
-			.map(([abbr, name], i) => ({ seed: i + 1, name, abbr, logo: "", wins: 9 - i - g, losses: i + g, pct: "–", gb: i ? String(i) : "–", last5: `${5 - i}-${i}`, strk: i % 2 ? "L1" : "W" + (3 - i) }))
-	}));
 
 	/****************************
 	 * Playoff berths
-	 * Per the B.LEAGUE format page: the top 3 clubs in each division qualify, plus the 2 best records among the
-	 * other 20 clubs, compared across both divisions. Ties are broken here by point differential only; the
+	 * Per the B.LEAGUE format page: the top 3 clubs in each conference qualify, plus the 2 best records among
+	 * the other 20 clubs, compared across both conferences. Ties are broken by point differential only; the
 	 * league's real order (head-to-head first) isn't computed, so a close wildcard race may differ from the official one.
 	 ****************************/
-	const DIRECT_PER_DIVISION = 3;
+	const DIRECT_PER_CONFERENCE = 3;
 	const WILDCARDS = 2;
 
 	const winRate = (row) => {
-		const w = Number(row.wins), l = Number(row.losses);
-		return w + l > 0 ? w / (w + l) : 0;
+		const games = Number(row.wins) + Number(row.losses);
+		return games > 0 ? Number(row.wins) / games : 0;
 	};
 
 	function markBerths(groups) {
-		const pool = [];
-		for (const group of groups) {
-			group.rows.forEach((row, i) => {
-				if (i < DIRECT_PER_DIVISION) row.berth = "direct";
-				else pool.push(row);
-			});
+		const rest = [];
+		for (const { rows } of groups) {
+			rows.forEach((row, i) => (i < DIRECT_PER_CONFERENCE ? (row.berth = "direct") : rest.push(row)));
 		}
-		pool.sort((a, b) => winRate(b) - winRate(a) || b.diff - a.diff);
-		pool.forEach((row, i) => { row.berth = i < WILDCARDS ? "wildcard" : "out"; });
+		rest.sort((a, b) => winRate(b) - winRate(a) || b.diff - a.diff);
+		rest.forEach((row, i) => { row.berth = i < WILDCARDS ? "wildcard" : "out"; });
 	}
 
 	/****************************
 	 * Rendering
 	 ****************************/
 	function renderRow(row) {
-		const club = clubLabel(row);
+		const club = clubNames(row);
 		const strkClass = /^[WL]/i.test(row.strk) ? row.strk[0].toUpperCase() : "";
-		return `<tr class="${row.berth ?? ""}">
+
+		// data-team and data-club are the hooks live.js uses to find each club.
+		return `<tr class="${row.berth}">
 			<td>${esc(row.seed)}</td>
-			<td><div class="team" data-team="${esc(row.abbr)}" data-club="${esc(row.name)}">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name" title="${esc(club.title)}">${esc(club.label)}</span></div></td>
+			<td><div class="team" data-team="${esc(row.abbr)}" data-club="${esc(row.name)}">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name" title="${esc(club.title)}">${esc(club.nickname)}</span><span class="abbr">${esc(club.code)}</span></div></td>
 			<td>${esc(row.wins)}</td>
 			<td>${esc(row.losses)}</td>
 			<td>${esc(row.pct)}</td>
@@ -191,35 +179,29 @@
 	}
 
 	// Redraws only when something changed, so live.js's dots survive a refresh that found nothing new.
-	let lastDrawn = "";
-	function draw(groups) {
-		markBerths(groups);
-		document.getElementById("key").hidden = false;
-		const signature = JSON.stringify(groups);
-		if (signature === lastDrawn) return;
-		lastDrawn = signature;
-		document.getElementById("conferences").replaceChildren(...groups.map(renderGroup));
-		document.dispatchEvent(new CustomEvent("standings:rendered")); // live.js adds its dots on this
-	}
-
+	let drawn = "";
 	async function load() {
 		if (document.hidden) return;
 		const html = await fetchText(STANDINGS_URL);
 		const groups = html ? parseStandings(html) : [];
 		const message = document.getElementById("message");
 
-		if (groups.length) {
-			showingReal = true;
-			message.hidden = true;
-			draw(groups);
-		} else if (!showingReal) { // keep the last good tables on a failed refresh
-			message.hidden = false;
-			message.textContent = "couldn’t read bleague.jp (cors?): showing sample data";
-			draw(SAMPLE);
+		if (!groups.length) {
+			if (!drawn) message.textContent = "couldn’t load standings"; // after the first draw, keep the last good tables
+			return;
 		}
+
+		markBerths(groups);
+		message.hidden = true;
+		document.getElementById("key").hidden = false;
+		const signature = JSON.stringify(groups);
+		if (signature === drawn) return;
+		drawn = signature;
+		document.getElementById("conferences").replaceChildren(...groups.map(renderGroup));
+		document.dispatchEvent(new CustomEvent("standings:rendered"));
 	}
 
 	load();
 	setInterval(load, REFRESH_MS);
-	document.addEventListener("visibilitychange", load);
+	document.addEventListener("visibilitychange", load); // catch up straight away after the tab was in the background
 })();

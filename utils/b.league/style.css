@@ -46,8 +46,12 @@ section.wide {
 .conf {
 	padding-top: 10px;
 	padding-bottom: 10px;
-	border-top: 2px solid #383838; /* Change the top and bottom border color */
-	border-bottom: 2px solid #383838;
+	border-top-width: 2px;
+	border-top-style: solid;
+	border-top-color: #383838; /* Change the top border color */
+	border-bottom-width: 2px;
+	border-bottom-style: solid;
+	border-bottom-color: #383838; /* Change the bottom border color */
 	min-width: 0;
 }
 .conf h5 {
@@ -82,7 +86,9 @@ section.wide {
 }
 .conf td {
 	color: #888888; /* Change the stat text color */
-	border-top: 1px solid #282828; /* Change the row divider color */
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: #282828; /* Change the row divider color */
 }
 .conf th:nth-child(2),
 .conf td:nth-child(2) {
@@ -93,8 +99,12 @@ section.wide {
 .conf td:first-child {
 	width: 2.4em;
 	text-align: center;
-	border-left: 3px solid transparent;
+	border-left-width: 3px;
+	border-left-style: solid;
+	border-left-color: transparent;
 }
+
+/* Seed + team */
 .conf td:first-child {
 	font-weight: bold;
 	color: #989898; /* Change the seed text color */
@@ -111,12 +121,14 @@ section.wide {
 	height: 1.5em;
 	object-fit: contain;
 }
-.team .name { /* long names get an ellipsis instead of spilling into the next table */
+.team .name { /* a long nickname gets an ellipsis instead of spilling into the next table */
 	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	font-feature-settings: "palt"; /* proportional kana, tighter if a Japanese fallback name shows */
+}
+.team .abbr {
+	display: none;
 }
 .conf td:nth-child(2) {
 	max-width: 0; /* lets the team cell shrink below its content so the ellipsis can kick in */
@@ -164,6 +176,8 @@ section.wide {
  *
  * Footer: back button
  * Variant for pages whose footer holds a back link instead of the clock.
+ * Sizes and weights match jaw.fyi. Use <footer class="back">. If other pages adopt
+ * this, move this block into the site-wide style.css.
  *
  ****************************/
 footer.back {
@@ -174,7 +188,7 @@ footer.back {
 	gap: 5px 20px;
 }
 footer.back h3 {
-	margin-left: auto;
+	margin-left: auto; /* keeps the link on the right even when the key is hidden or wraps */
 	font-size: clamp(0.75em, 8vw, 1.5em);
 }
 footer.back h3 a {
@@ -183,7 +197,7 @@ footer.back h3 a {
 
 /****************************
  *
- * Key
+ * Key and message
  *
  ****************************/
 .key {
@@ -195,7 +209,8 @@ footer.back h3 a {
 	font-size: clamp(0.75em, 3.6vw, 1em);
 	text-transform: lowercase;
 }
-.key[hidden] {
+.key[hidden],
+.message[hidden] {
 	display: none;
 }
 .swatch {
@@ -210,15 +225,6 @@ footer.back h3 a {
 }
 .swatch.wildcard {
 	background-color: #7FA3BA;
-}
-
-/****************************
- *
- * Message
- *
- ****************************/
-.message[hidden] {
-	display: none;
 }
 .message {
 	margin: 0;
@@ -285,7 +291,9 @@ footer.back h3 a {
 	max-width: min(340px, calc(100vw - 20px));
 	padding: 10px 14px;
 	background-color: #202020; /* Change the overlay background color */
-	border: 2px solid #383838; /* Change the overlay border color */
+	border-width: 2px;
+	border-style: solid;
+	border-color: #383838; /* Change the overlay border color */
 	box-shadow: 0px 0px 20px #000000;
 	font-size: clamp(0.75em, 3.6vw, 1em);
 	text-transform: lowercase;
@@ -300,7 +308,7 @@ footer.back h3 a {
 	grid-template-columns: 1fr auto 1fr; /* equal outer columns keep vs/@ dead center, under the clock */
 	align-items: center;
 	gap: 12px;
-	color: #989898; /* Change the team name color */
+	color: #989898; /* Change the team abbreviation color */
 	font-weight: bold;
 }
 .live-card .side {
@@ -330,13 +338,29 @@ footer.back h3 a {
 	color: #888888; /* Change the game clock color */
 	text-align: center;
 }
-/* Latest play: time tag, text, points */
+/* Latest play: jersey number, time tag, text, points */
 .live-card .play {
+	display: flex;
+	align-items: center;
+	gap: 10px;
 	margin-top: 8px;
 	padding-top: 8px;
-	border-top: 1px solid #383838; /* Change the divider color */
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: #383838; /* Change the divider color */
 	color: #989898; /* Change the play text color */
 	line-height: 1.35;
+}
+.live-card .num {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 2.4em;
+	height: 2.4em;
+	border-radius: 50%;
+	background-color: #2A2A2A; /* Change the jersey badge backdrop color */
+	color: #989898; /* Change the jersey number color */
+	font-weight: bold;
 }
 .live-card .when {
 	margin-right: 8px;
@@ -358,11 +382,17 @@ footer.back h3 a {
 		grid-template-columns: 1fr;
 		row-gap: 0;
 	}
-	.conf + .conf { /* stacked: West's bottom line is the only divider */
+	.conf + .conf { /* stacked: West's bottom line is the only divider, like the base nav blocks */
 		border-top-width: 0;
 	}
 }
 @media (max-width: 520px) {
+	.team .name {
+		display: none;
+	}
+	.team .abbr {
+		display: inline;
+	}
 	.conf th,
 	.conf td {
 		padding-left: 4px;
