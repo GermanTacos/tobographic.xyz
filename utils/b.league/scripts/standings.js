@@ -139,18 +139,18 @@
 		for (const el of doc.querySelectorAll("h1, h2, h3, h4, h5, h6, table")) {
 			if (el.tagName !== "TABLE") {
 				const m = /(東|西)地区/.exec(el.textContent);
-				if (m) side = m[1] === "東" ? "east" : "west";
+				if (m) side = m[1] === "東" ? "eastern conference" : "western conference";
 				continue;
 			}
 			if (!side || groups.has(side)) continue;
 			const rows = readTable(el);
 			if (rows.length) groups.set(side, rows);
 		}
-		return ["west", "east"].filter((n) => groups.has(n)).map((name) => ({ name, rows: groups.get(name) }));
+		return ["western conference", "eastern conference"].filter((n) => groups.has(n)).map((name) => ({ name, rows: groups.get(name) }));
 	}
 
 	// Placeholder numbers, only shown when bleague.jp can't be reached.
-	const SAMPLE = ["west", "east"].map((name, g) => ({
+	const SAMPLE = ["western conference", "eastern conference"].map((name, g) => ({
 		name,
 		rows: [["広島", "広島ドラゴンフライズ"], ["名古屋D", "名古屋ダイヤモンドドルフィンズ"], ["琉球", "琉球ゴールデンキングス"], ["長崎", "長崎ヴェルカ"]]
 			.map(([abbr, name], i) => ({ seed: i + 1, name, abbr, logo: "", wins: 9 - i - g, losses: i + g, pct: "–", gb: i ? String(i) : "–", last5: `${5 - i}-${i}`, streak: i % 2 ? "L1" : "W" + (3 - i) }))
