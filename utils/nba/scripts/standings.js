@@ -66,7 +66,7 @@
 			winPct: formatWinPct(pct),
 			gb: formatGamesBehind(show("gamesBehind", "GB")),
 			last10: show("lasttengames", "Last Ten Games", "L10"),
-			streak: String(show("streak", "STRK"))
+			streak: String(show("strk", "STRK"))
 		};
 	}
 
