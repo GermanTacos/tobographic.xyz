@@ -66,7 +66,7 @@
 			winPct: formatWinPct(pct),
 			gb: formatGamesBehind(show("gamesBehind", "GB")),
 			last10: show("lasttengames", "Last Ten Games", "L10"),
-			streak: String(show("strk", "STRK"))
+			strk: String(show("strk", "STRK"))
 		};
 	}
 
@@ -92,7 +92,7 @@
 	function renderRow(row, index) {
 		const seed = row.seed ?? index + 1;
 		const berth = seed <= 6 ? "direct" : seed <= 10 ? "playin" : "out";
-		const streakClass = /^[WL]/i.test(row.streak) ? row.streak[0].toUpperCase() : "";
+		const strkClass = /^[WL]/i.test(row.strk) ? row.strk[0].toUpperCase() : "";
 
 		// data-team is the hook live.js uses to find each team.
 		return `<tr class="${berth}">
@@ -103,7 +103,7 @@
 			<td>${esc(row.winPct)}</td>
 			<td>${esc(row.gb)}</td>
 			<td>${esc(row.last10)}</td>
-			<td class="streak ${streakClass}">${esc(row.streak)}</td>
+			<td class="strk ${strkClass}">${esc(row.strk)}</td>
 		</tr>`;
 	}
 
@@ -114,7 +114,7 @@
 		conf.innerHTML = `<h5>${esc(group.name)}</h5>
 			<table>
 				<thead>
-					<tr><th scope="col">#</th><th scope="col">team</th><th scope="col">w</th><th scope="col">l</th><th scope="col">pct</th><th scope="col">gb</th><th scope="col">l10</th><th scope="col">streak</th></tr>
+					<tr><th scope="col">#</th><th scope="col">team</th><th scope="col">w</th><th scope="col">l</th><th scope="col">pct</th><th scope="col">gb</th><th scope="col">l10</th><th scope="col">strk</th></tr>
 				</thead>
 				<tbody>${group.rows.map(renderRow).join("")}</tbody>
 			</table>`;

@@ -144,21 +144,21 @@ section.wide {
 	opacity: 0.45;
 }
 
-/* Wins, losses and streaks: green and red, dimmed to match on faded rows */
+/* Wins, losses and strks: green and red, dimmed to match on faded rows */
 .conf td:nth-child(3),
-.conf td.streak.W {
+.conf td.strk.W {
 	color: #8DB48D; /* Change the win color */
 }
 .conf td:nth-child(4),
-.conf td.streak.L {
+.conf td.strk.L {
 	color: #C27A7A; /* Change the loss color */
 }
 .conf tr.out td:nth-child(3),
-.conf tr.out td.streak.W {
+.conf tr.out td.strk.W {
 	color: #5F7F5F; /* Change the faded win color */
 }
 .conf tr.out td:nth-child(4),
-.conf tr.out td.streak.L {
+.conf tr.out td.strk.L {
 	color: #8A5858; /* Change the faded loss color */
 }
 
