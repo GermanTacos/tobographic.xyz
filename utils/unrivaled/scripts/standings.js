@@ -88,14 +88,12 @@
 		});
 	}
 
-	// Returns [{ name, rows }] (one group, to share the b.league and nba rendering code), named after the
-	// page's "2026 Standings" heading.
+	// Returns [{ rows }]: one group, so the rendering code stays the same shape as the nba and b.league pages.
 	function parseStandings(html) {
 		const doc = new DOMParser().parseFromString(html, "text/html");
 		const table = [...doc.querySelectorAll("table")].find((t) => readTable(t).length);
 		if (!table) return [];
-		const heading = [...doc.querySelectorAll("h1, h2, h3")].map((h) => tidy(h.textContent)).find((t) => /standings/i.test(t));
-		return [{ name: (heading ?? "standings").toLowerCase(), rows: readTable(table) }];
+		return [{ rows: readTable(table) }];
 	}
 
 	/****************************
@@ -132,8 +130,7 @@
 		// A div, not a section: the base stylesheet styles every section as a full-height page frame.
 		const conf = document.createElement("div");
 		conf.className = "conf";
-		conf.innerHTML = `<h5>${esc(group.name)}</h5>
-			<table>
+		conf.innerHTML = `<table>
 				<thead>
 					<tr><th scope="col">#</th><th scope="col">team</th><th scope="col">w</th><th scope="col">l</th><th scope="col">pct</th><th scope="col">gb</th><th scope="col">diff</th><th scope="col">strk</th></tr>
 				</thead>

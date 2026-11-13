@@ -2,14 +2,36 @@
  *
  * Unrivaled page
  * Loaded after the site-wide style.css. Only adds what the base file doesn't cover.
- * One table of eight clubs fits the base 500px column, so unlike the nba and b.league pages
- * there is no wide layout and no two-column grid.
+ * One table of eight clubs fits the 500px column, so unlike the nba and b.league pages
+ * there is no two-column grid.
  *
  ****************************/
 
+/****************************
+ *
+ * Layout
+ * Same mechanism as the nba and b.league pages (section.wide): the base stylesheet styles every section
+ * as a full-height page frame, so the content is pinned to the top with auto margins that center it when it
+ * fits and keep the top reachable when it doesn't. Header, main and footer are all capped at 500px.
+ *
+ ****************************/
+section.wide {
+	justify-content: flex-start;
+}
+.wide > header {
+	margin-top: auto;
+	padding-top: 25px;
+	max-width: 500px;
+}
+.wide > footer {
+	margin-bottom: auto;
+	padding-bottom: 25px;
+	max-width: 500px;
+}
 .standings {
 	margin: 0 auto;
 	width: 100%;
+	max-width: 500px;
 }
 
 /****************************
@@ -27,13 +49,6 @@
 	border-bottom-style: solid;
 	border-bottom-color: #383838; /* Change the bottom border color */
 	min-width: 0;
-}
-.conf h5 {
-	margin: 0 0 6px 0;
-	color: #888888; /* Change the table header text color, same as the header h2 */
-	font-size: clamp(0.75em, 6vw, 1.5em);
-	font-weight: 400;
-	text-transform: lowercase;
 }
 
 /****************************

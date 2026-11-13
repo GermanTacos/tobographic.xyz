@@ -8,8 +8,8 @@
  ****************************/
 
 // unrivaled.basketball (and Sportradar, for live games) don't send CORS headers, so every request goes through a proxy.
-// Point this at a Cloudflare Worker like the bleague one. It must allow unrivaled.basketball and api.sportradar.com,
-// and the worker should add the Sportradar api_key itself so the key never reaches the browser.
+// This is the Cloudflare Worker in worker.js. It allows unrivaled.basketball and api.sportradar.com, and adds the
+// Sportradar api_key itself so the key never reaches the browser.
 const PROXY = "https://hidden-sea-74d9.tiny-river-02cf.workers.dev/?url=";
 const REQUEST_TIMEOUT_MS = 8000;
 
