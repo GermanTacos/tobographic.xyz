@@ -4,26 +4,15 @@
  *
  * B.LEAGUE Premier standings
  * Fetches the official bleague.jp standings page and reads its tables (east and west).
- * There is no JSON API, so this parses server-rendered HTML. Browsers will probably block
- * a direct cross-origin request: add a proxy to PROXIES. Until a fetch works, the page
- * shows a small sample so the layout can still be seen.
+ * There is no JSON API, so this parses server-rendered HTML, fetched through the proxy set in helpers.js.
+ * Until a fetch works, the page shows a small sample so the layout can still be seen.
  *
  ****************************/
 (() => {
 	const STANDINGS_URL = "https://www.bleague.jp/standings/";
-	// Fallbacks tried after the direct request, e.g. (url) => "https://your-proxy.example/?url=" + encodeURIComponent(url)
-	const PROXIES = [(url) => "https://bleague-proxy.tiny-river-02cf.workers.dev/?url=" + encodeURIComponent(url)];
-	const REQUEST_TIMEOUT_MS = 8000;
 	const REFRESH_MS = 60000;
 
 	let showingReal = false;
-
-	// Escapes text before it goes into an innerHTML template.
-	function esc(value) {
-		return String(value ?? "").replace(/[&<>"']/g, (c) => ({
-			"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-		}[c]));
-	}
 
 	/****************************
 	 * Data
@@ -69,19 +58,6 @@
 			console.warn("No English name for club:", row.abbr, row.name);
 		}
 		return { label: en?.[0] ?? row.abbr ?? row.name, title: en?.[1] ?? row.name };
-	}
-
-	async function getHTML() {
-		const urls = [STANDINGS_URL, ...PROXIES.map((proxy) => proxy(STANDINGS_URL))];
-		for (const url of urls) {
-			try {
-				const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
-				if (res.ok) return await res.text();
-			} catch (err) {
-				console.warn("Request failed:", url, err);
-			}
-		}
-		return null;
 	}
 
 	const clean = (s) => String(s ?? "").replace(/\s+/g, "");
@@ -190,7 +166,7 @@
 		const strkClass = /^[WL]/i.test(row.strk) ? row.strk[0].toUpperCase() : "";
 		return `<tr class="${row.berth ?? ""}">
 			<td>${esc(row.seed)}</td>
-			<td><div class="team">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name" title="${esc(club.title)}">${esc(club.label)}</span></div></td>
+			<td><div class="team" data-team="${esc(row.abbr)}" data-club="${esc(row.name)}">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name" title="${esc(club.title)}">${esc(club.label)}</span></div></td>
 			<td>${esc(row.wins)}</td>
 			<td>${esc(row.losses)}</td>
 			<td>${esc(row.pct)}</td>
@@ -214,15 +190,21 @@
 		return conf;
 	}
 
+	// Redraws only when something changed, so live.js's dots survive a refresh that found nothing new.
+	let lastDrawn = "";
 	function draw(groups) {
 		markBerths(groups);
 		document.getElementById("key").hidden = false;
+		const signature = JSON.stringify(groups);
+		if (signature === lastDrawn) return;
+		lastDrawn = signature;
 		document.getElementById("conferences").replaceChildren(...groups.map(renderGroup));
+		document.dispatchEvent(new CustomEvent("standings:rendered")); // live.js adds its dots on this
 	}
 
 	async function load() {
 		if (document.hidden) return;
-		const html = await getHTML();
+		const html = await fetchText(STANDINGS_URL);
 		const groups = html ? parseStandings(html) : [];
 		const message = document.getElementById("message");
 

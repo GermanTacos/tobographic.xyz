@@ -230,6 +230,126 @@ footer.back h3 a {
 
 /****************************
  *
+ * Live games
+ *
+ ****************************/
+.live {
+	position: relative;
+	flex: none;
+	width: 0.6em;
+	height: 0.6em;
+	margin-left: 2px;
+	border-radius: 50%;
+	background-color: #D45B5B; /* Change the live dot color */
+	cursor: pointer;
+	animation: live-pulse 1.6s ease-out infinite;
+}
+.live[hidden] {
+	display: none;
+}
+.live::after { /* larger tap and hover target around the dot */
+	content: "";
+	position: absolute;
+	top: -8px;
+	right: -8px;
+	bottom: -8px;
+	left: -8px;
+}
+.live:focus-visible {
+	outline: 2px solid #E5B75B;
+	outline-offset: 3px;
+}
+@keyframes live-pulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(237, 237, 237, 0.75); /* Change the pulse color */
+	}
+	70% {
+		box-shadow: 0 0 0 0.5em rgba(237, 237, 237, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(237, 237, 237, 0);
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.live {
+		animation: none;
+		box-shadow: 0 0 0 2px rgba(237, 237, 237, 0.5);
+	}
+}
+
+/* Score overlay */
+.live-card {
+	position: fixed;
+	z-index: 100;
+	min-width: 270px;
+	max-width: min(340px, calc(100vw - 20px));
+	padding: 10px 14px;
+	background-color: #202020; /* Change the overlay background color */
+	border: 2px solid #383838; /* Change the overlay border color */
+	box-shadow: 0px 0px 20px #000000;
+	font-size: clamp(0.75em, 3.6vw, 1em);
+	text-transform: lowercase;
+	pointer-events: none;
+}
+.live-card[hidden] {
+	display: none;
+}
+/* Top row: logo, name, score, vs or @, score, name, logo */
+.live-card .matchup {
+	display: grid;
+	grid-template-columns: 1fr auto 1fr; /* equal outer columns keep vs/@ dead center, under the clock */
+	align-items: center;
+	gap: 12px;
+	color: #989898; /* Change the team name color */
+	font-weight: bold;
+}
+.live-card .side {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.live-card .side:last-child {
+	justify-content: flex-end;
+}
+.live-card .side b {
+	color: #E0CCA8; /* Change the score color */
+	font-size: 1.3em;
+}
+.live-card .logo {
+	flex: none;
+	width: 1.6em;
+	height: 1.6em;
+	object-fit: contain;
+}
+.live-card .sep {
+	color: #686868; /* Change the vs/@ color */
+	font-weight: 400;
+}
+.live-card .status {
+	margin-top: 4px;
+	color: #888888; /* Change the game clock color */
+	text-align: center;
+}
+/* Latest play: time tag, text, points */
+.live-card .play {
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid #383838; /* Change the divider color */
+	color: #989898; /* Change the play text color */
+	line-height: 1.35;
+}
+.live-card .when {
+	margin-right: 8px;
+	color: #686868; /* Change the play time color */
+}
+.live-card .pts {
+	margin-left: 6px;
+	color: #8DB48D; /* Change the points color, same as the win color */
+	font-weight: bold;
+}
+
+/****************************
+ *
  * Small screens
  *
  ****************************/
