@@ -124,7 +124,7 @@
 				pct: text("勝率"),
 				gb: text("差"),
 				last5: text("過去5試合"),
-				streak: text("連勝/連敗")
+				strk: text("連勝/連敗")
 			});
 		}
 		return rows;
@@ -153,7 +153,7 @@
 	const SAMPLE = ["western conference", "eastern conference"].map((name, g) => ({
 		name,
 		rows: [["広島", "広島ドラゴンフライズ"], ["名古屋D", "名古屋ダイヤモンドドルフィンズ"], ["琉球", "琉球ゴールデンキングス"], ["長崎", "長崎ヴェルカ"]]
-			.map(([abbr, name], i) => ({ seed: i + 1, name, abbr, logo: "", wins: 9 - i - g, losses: i + g, pct: "–", gb: i ? String(i) : "–", last5: `${5 - i}-${i}`, streak: i % 2 ? "L1" : "W" + (3 - i) }))
+			.map(([abbr, name], i) => ({ seed: i + 1, name, abbr, logo: "", wins: 9 - i - g, losses: i + g, pct: "–", gb: i ? String(i) : "–", last5: `${5 - i}-${i}`, strk: i % 2 ? "L1" : "W" + (3 - i) }))
 	}));
 
 	/****************************
@@ -187,7 +187,7 @@
 	 ****************************/
 	function renderRow(row) {
 		const club = clubLabel(row);
-		const streakClass = /^[WL]/i.test(row.streak) ? row.streak[0].toUpperCase() : "";
+		const strkClass = /^[WL]/i.test(row.strk) ? row.strk[0].toUpperCase() : "";
 		return `<tr class="${row.berth ?? ""}">
 			<td>${esc(row.seed)}</td>
 			<td><div class="team">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name" title="${esc(club.title)}">${esc(club.label)}</span></div></td>
@@ -196,7 +196,7 @@
 			<td>${esc(row.pct)}</td>
 			<td>${esc(row.gb)}</td>
 			<td>${esc(row.last5)}</td>
-			<td class="streak ${streakClass}">${esc(row.streak)}</td>
+			<td class="strk ${strkClass}">${esc(row.strk)}</td>
 		</tr>`;
 	}
 
@@ -207,7 +207,7 @@
 		conf.innerHTML = `<h5>${esc(group.name)}</h5>
 			<table>
 				<thead>
-					<tr><th scope="col">#</th><th scope="col">team</th><th scope="col">w</th><th scope="col">l</th><th scope="col">pct</th><th scope="col">gb</th><th scope="col">l5</th><th scope="col">streak</th></tr>
+					<tr><th scope="col">#</th><th scope="col">team</th><th scope="col">w</th><th scope="col">l</th><th scope="col">pct</th><th scope="col">gb</th><th scope="col">l5</th><th scope="col">strk</th></tr>
 				</thead>
 				<tbody>${group.rows.map(renderRow).join("")}</tbody>
 			</table>`;
