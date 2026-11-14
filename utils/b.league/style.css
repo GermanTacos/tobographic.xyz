@@ -371,6 +371,8 @@ footer.back h3 a {
 	height: 100%;
 	object-fit: cover;
 	object-position: 50% 12%; /* headshots are usually wide with the face near the top */
+	transform: scale(1.25); /* Change the headshot zoom */
+	transform-origin: 50% 12%; /* zooms toward the top center, so the face stays in frame and the body is cropped */
 }
 .live-card .when {
 	margin-right: 8px;
