@@ -61,8 +61,7 @@ section.wide {
 .toggle input { /* drawn by hand: a native checkbox can't be filled gray when empty */
 	appearance: none;
 	-webkit-appearance: none;
-	display: grid;
-	place-content: center;
+	position: relative; /* the check mark is positioned inside the box, so it never changes the box's own layout */
 	flex: none;
 	width: 1em;
 	height: 1em;
@@ -77,13 +76,15 @@ section.wide {
 }
 .toggle input:checked::after { /* the check mark */
 	content: "";
+	position: absolute; /* out of flow: a child in flow would shift the box's baseline and move it when checked */
+	left: 50%;
+	top: 50%;
 	width: 0.28em;
 	height: 0.52em;
-	margin-top: -0.08em;
 	border-style: solid;
 	border-color: #202020; /* Change the check mark color */
 	border-width: 0 2px 2px 0;
-	transform: rotate(45deg);
+	transform: translate(-50%, -60%) rotate(45deg);
 }
 .toggle input:focus-visible { /* keyboard users only; a mouse click shows no outline */
 	outline: 2px solid #E5B75B;
