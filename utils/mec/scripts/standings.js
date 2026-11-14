@@ -58,6 +58,7 @@
 	// One school's row. Cells are found by what they hold, not by position: the page repeats some cells
 	// (the headers show "School" and "Conf" twice) and the exact markup isn't guaranteed. The first W-L is the
 	// conference record, the next distinct one the overall record: with duplicated cells they are the 1st and 3rd.
+	// The streak on the page covers every game, so it's shown the same in both views.
 	function readRow(tr) {
 		const link = [...tr.querySelectorAll("a[href]")].find((a) => tidy(a.textContent));
 		if (!link || !/schedule/i.test(link.getAttribute("href"))) return null;
@@ -67,15 +68,15 @@
 		if (records.length < 2) return null;
 		const [conf, overall] = records.length >= 4 ? [records[0], records[2]] : [records[0], records[1]];
 		const [w, l] = conf.split("-").map(Number);
+		const [ow, ol] = overall.split("-").map(Number);
 
 		const img = tr.querySelector("img");
 		const src = img?.getAttribute("src") || img?.getAttribute("data-src") || "";
 		return {
 			school: tidy(link.textContent),
 			logo: src && !src.startsWith("data:") ? new URL(src, STANDINGS_URL).href : "",
-			w, l,
-			pct: formatPct(w, l),
-			overall,
+			w, l, pct: formatPct(w, l),       // conference only
+			ow, ol, opct: formatPct(ow, ol), // every game, conference and non-conference
 			strk: texts.find((t) => /^[WL]\d+$/i.test(t))?.toUpperCase() ?? "–"
 		};
 	}
@@ -95,19 +96,12 @@
 		return [];
 	}
 
-	// Games behind the leader, in conference play: half a game per win or loss of difference.
-	function markGamesBehind(rows) {
-		const lead = rows[0];
-		for (const row of rows) {
-			const gb = ((lead.w - row.w) + (row.l - lead.l)) / 2;
-			row.gb = gb > 0 ? gb.toFixed(1) : "–";
-		}
-	}
-
 	/****************************
 	 * Tournament berths
 	 * The top ten make the conference tournament and the top six of those skip the first round. Until a
 	 * conference game has been played the order is only the overall record, so nothing is coloured yet.
+	 * Seeds and colours always follow the conference order, whichever view is showing: the tournament is seeded on
+	 * conference play, so the # column and the colours stay true when the table shows overall records.
 	 ****************************/
 	function markBerths(groups) {
 		for (const { rows } of groups) {
@@ -116,7 +110,6 @@
 				row.seed = i + 1;
 				row.berth = !started ? "" : row.seed <= BYES ? "direct" : row.seed <= TOURNAMENT_SPOTS ? "playoff" : "out";
 			});
-			markGamesBehind(rows);
 		}
 	}
 
@@ -125,17 +118,16 @@
 	 ****************************/
 	function renderRow(row) {
 		const club = clubFor(row.school);
+		const [w, l, pct] = confOnly() ? [row.w, row.l, row.pct] : [row.ow, row.ol, row.opct];
 		const strkClass = /^[WL]/i.test(row.strk) ? row.strk[0].toUpperCase() : "";
 
 		// data-team, data-match and data-club are the hooks live.js uses to find each school.
 		return `<tr class="${row.berth}">
 			<td>${esc(row.seed)}</td>
 			<td><div class="team" data-team="${esc(club.match[0])}" data-match="${esc(club.match.join("|"))}" data-club="${esc(club.name)}">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name" title="${esc(club.title)}">${esc(club.name)}</span><span class="abbr">${esc(club.code)}</span></div></td>
-			<td>${esc(row.w)}</td>
-			<td>${esc(row.l)}</td>
-			<td>${esc(row.pct)}</td>
-			<td>${esc(row.gb)}</td>
-			<td>${esc(row.overall)}</td>
+			<td>${esc(w)}</td>
+			<td>${esc(l)}</td>
+			<td>${esc(pct)}</td>
 			<td class="strk ${strkClass}">${esc(row.strk)}</td>
 		</tr>`;
 	}
@@ -146,34 +138,59 @@
 		conf.className = "conf";
 		conf.innerHTML = `<table>
 				<thead>
-					<tr><th scope="col">#</th><th scope="col">team</th><th scope="col">w</th><th scope="col">l</th><th scope="col">pct</th><th scope="col">gb</th><th scope="col">ovr</th><th scope="col">strk</th></tr>
+					<tr><th scope="col">#</th><th scope="col">team</th><th scope="col">w</th><th scope="col">l</th><th scope="col">pct</th><th scope="col">strk</th></tr>
 				</thead>
 				<tbody>${group.rows.map(renderRow).join("")}</tbody>
 			</table>`;
 		return conf;
 	}
 
-	// Redraws only when something changed, so live.js's dots survive a refresh that found nothing new.
+	/****************************
+	 * View toggle
+	 * Overall (every game) is the default; the checkbox switches to conference-only records. The choice is
+	 * remembered in this browser. Flipping it redraws from the data already loaded, with no new request.
+	 ****************************/
+	const toggle = document.getElementById("conf-only");
+	const confOnly = () => Boolean(toggle?.checked);
+	try {
+		if (toggle) toggle.checked = localStorage.getItem("mec-conf-only") === "1";
+	} catch { /* storage can be blocked; the default stays */ }
+	toggle?.addEventListener("change", () => {
+		try {
+			localStorage.setItem("mec-conf-only", confOnly() ? "1" : "0");
+		} catch { /* not worth failing over */ }
+		draw();
+	});
+
+	// Redraws only when something changed (new data or the other view), so live.js's dots survive a refresh
+	// that found nothing new.
+	let groups = [];
 	let drawn = "";
-	async function load() {
-		if (document.hidden) return;
-		const html = await fetchText(STANDINGS_URL);
-		const groups = html ? parseStandings(html) : [];
-		const message = document.getElementById("message");
-
-		if (!groups.length) {
-			if (!drawn) message.textContent = "couldn’t load standings"; // after the first draw, keep the last good table
-			return;
-		}
-
-		markBerths(groups);
-		message.hidden = true;
-		document.getElementById("key").hidden = !groups.some((g) => g.rows.some((r) => r.berth));
-		const signature = JSON.stringify(groups);
+	function draw() {
+		if (!groups.length) return;
+		const signature = JSON.stringify([confOnly(), groups]);
 		if (signature === drawn) return;
 		drawn = signature;
 		document.getElementById("conferences").replaceChildren(...groups.map(renderGroup));
 		document.dispatchEvent(new CustomEvent("standings:rendered"));
+	}
+
+	async function load() {
+		if (document.hidden) return;
+		const html = await fetchText(STANDINGS_URL);
+		const fresh = html ? parseStandings(html) : [];
+		const message = document.getElementById("message");
+
+		if (!fresh.length) {
+			if (!drawn) message.textContent = "couldn’t load standings"; // after the first draw, keep the last good table
+			return;
+		}
+
+		markBerths(fresh);
+		groups = fresh;
+		message.hidden = true;
+		document.getElementById("key").hidden = !groups.some((g) => g.rows.some((r) => r.berth));
+		draw();
 	}
 
 	load();

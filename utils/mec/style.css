@@ -36,6 +36,36 @@ section.wide {
 
 /****************************
  *
+ * View toggle
+ * Sits on the title row, right-aligned, in the same type as the key.
+ *
+ ****************************/
+.wide > header.with-toggle {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 5px 20px;
+}
+.toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 0 auto; /* stays on the right even if the row wraps */
+	color: #686868; /* Change the toggle text color, same as the key */
+	font-size: clamp(0.75em, 3.6vw, 1em);
+	text-transform: lowercase;
+	cursor: pointer;
+	user-select: none;
+}
+.toggle input {
+	margin: 0;
+	accent-color: #E5B75B; /* Change the checked color, same as the playoff gold */
+	cursor: pointer;
+}
+
+/****************************
+ *
  * Table group
  *
  ****************************/
