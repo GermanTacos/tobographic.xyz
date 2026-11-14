@@ -10,9 +10,8 @@
 
         <link href="https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
 
-        <!-- Site-wide base styles first, then this page's additions. Adjust the first path if this folder moves. -->
-        <link href="../../style.css" type="text/css" rel="stylesheet"/>
-        <link href="style.css" type="text/css" rel="stylesheet"/>
+        <link href="../../style.css" type="text/css" rel="stylesheet"/> <!-- site -->
+        <link href="style.css" type="text/css" rel="stylesheet"/> 		<!-- page -->
     </head>
 
     <body>
@@ -33,7 +32,7 @@
             </footer>
         </section>
 
-        <!-- Order matters: helpers first, then standings, then the optional live-game layer. -->
+        <!-- helper first, then standings, then live -->
         <script src="scripts/helpers.js" defer></script>
         <script src="scripts/standings.js" defer></script>
         <script src="scripts/live.js" defer></script>
