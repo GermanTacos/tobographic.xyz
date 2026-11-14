@@ -1,0 +1,182 @@
+"use strict";
+
+/****************************
+ *
+ * MEC men's basketball standings
+ * Reads the official mountaineast.org standings page (server-rendered Sidearm HTML; there is no JSON API)
+ * and renders one table. Knows nothing about live games: when the table is drawn it fires
+ * "standings:rendered", and live.js (if loaded) takes it from there.
+ *
+ ****************************/
+(() => {
+	const STANDINGS_URL = "https://mountaineast.org/standings.aspx?path=mbb";
+	const REFRESH_MS = 60000;   // standings move when games end
+	const BYES = 6;             // the top six seeds skip the first round
+	const TOURNAMENT_SPOTS = 10; // the top ten of the twelve schools reach the tournament (last season's format; update if it changes)
+
+	/****************************
+	 * Schools
+	 * Each entry: [names the schools go by, run through norm() so spelling doesn't matter] plus the name for
+	 * the table, the full name for the tooltip and a short code for small screens and the live overlay.
+	 * A school that's missing falls back to the page's own name and is logged to the console.
+	 ****************************/
+	const CLUBS = [
+		{ match: ["daviselkins"], name: "davis & elkins", title: "Davis & Elkins", code: "D&E" },
+		{ match: ["glenvillest"], name: "glenville st", title: "Glenville State", code: "GLE" },
+		{ match: ["shawneest"], name: "shawnee st", title: "Shawnee State", code: "SHA" },
+		{ match: ["wvwesleyan", "wvwesleyancollege"], name: "wv wesleyan", title: "West Virginia Wesleyan", code: "WVW" },
+		{ match: ["wheeling", "wheelinguniversity"], name: "wheeling", title: "Wheeling", code: "WHE" },
+		{ match: ["westliberty", "westlibertyuniversity"], name: "west liberty", title: "West Liberty", code: "WLU" },
+		{ match: ["concord", "concorduniversity"], name: "concord", title: "Concord", code: "CON" },
+		{ match: ["charleston", "charlestonwv", "universityofcharleston", "ucharleston"], name: "charleston", title: "Charleston", code: "CHA" },
+		{ match: ["fairmontst"], name: "fairmont st", title: "Fairmont State", code: "FAI" },
+		{ match: ["frostburgst"], name: "frostburg st", title: "Frostburg State", code: "FRO" },
+		{ match: ["pointpark"], name: "point park", title: "Point Park", code: "PPU" },
+		{ match: ["wvst", "wvstuniversity"], name: "wv state", title: "West Virginia State", code: "WVS" }
+	];
+	const unknownClubs = new Set();
+
+	function clubFor(school) {
+		const key = norm(school);
+		const club = CLUBS.find((c) => c.match.includes(key));
+		if (club) return club;
+		if (!unknownClubs.has(key)) {
+			unknownClubs.add(key);
+			console.warn("No entry for school:", school);
+		}
+		return { match: [key], name: school.toLowerCase(), title: school, code: school.slice(0, 3).toUpperCase() };
+	}
+
+	/****************************
+	 * Data
+	 ****************************/
+	const tidy = (s) => String(s ?? "").replace(/\s+/g, " ").trim();
+
+	// ".750", "1.000", ".000"; no games yet reads as a dash.
+	const formatPct = (w, l) => (w + l ? (w / (w + l) >= 1 ? "1.000" : (w / (w + l)).toFixed(3).replace(/^0/, "")) : "–");
+
+	// One school's row. Cells are found by what they hold, not by position: the page repeats some cells
+	// (the headers show "School" and "Conf" twice) and the exact markup isn't guaranteed. The first W-L is the
+	// conference record, the next distinct one the overall record: with duplicated cells they are the 1st and 3rd.
+	function readRow(tr) {
+		const link = [...tr.querySelectorAll("a[href]")].find((a) => tidy(a.textContent));
+		if (!link || !/schedule/i.test(link.getAttribute("href"))) return null;
+
+		const texts = [...tr.children].map((c) => tidy(c.textContent));
+		const records = texts.filter((t) => /^\d+-\d+$/.test(t));
+		if (records.length < 2) return null;
+		const [conf, overall] = records.length >= 4 ? [records[0], records[2]] : [records[0], records[1]];
+		const [w, l] = conf.split("-").map(Number);
+
+		const img = tr.querySelector("img");
+		const src = img?.getAttribute("src") || img?.getAttribute("data-src") || "";
+		return {
+			school: tidy(link.textContent),
+			logo: src && !src.startsWith("data:") ? new URL(src, STANDINGS_URL).href : "",
+			w, l,
+			pct: formatPct(w, l),
+			overall,
+			strk: texts.find((t) => /^[WL]\d+$/i.test(t))?.toUpperCase() ?? "–"
+		};
+	}
+
+	function readTable(table) {
+		return [...table.querySelectorAll("tr")].map(readRow).filter(Boolean);
+	}
+
+	// Returns [{ rows }]: one group, so the rendering code stays the same shape as the other dashboards.
+	// The rows stay in the order the conference lists them, so its tiebreakers are respected.
+	function parseStandings(html) {
+		const doc = new DOMParser().parseFromString(html, "text/html");
+		for (const table of doc.querySelectorAll("table")) {
+			const rows = readTable(table);
+			if (rows.length) return [{ rows }];
+		}
+		return [];
+	}
+
+	// Games behind the leader, in conference play: half a game per win or loss of difference.
+	function markGamesBehind(rows) {
+		const lead = rows[0];
+		for (const row of rows) {
+			const gb = ((lead.w - row.w) + (row.l - lead.l)) / 2;
+			row.gb = gb > 0 ? gb.toFixed(1) : "–";
+		}
+	}
+
+	/****************************
+	 * Tournament berths
+	 * The top ten make the conference tournament and the top six of those skip the first round. Until a
+	 * conference game has been played the order is only the overall record, so nothing is coloured yet.
+	 ****************************/
+	function markBerths(groups) {
+		for (const { rows } of groups) {
+			const started = rows.some((row) => row.w + row.l > 0);
+			rows.forEach((row, i) => {
+				row.seed = i + 1;
+				row.berth = !started ? "" : row.seed <= BYES ? "direct" : row.seed <= TOURNAMENT_SPOTS ? "playoff" : "out";
+			});
+			markGamesBehind(rows);
+		}
+	}
+
+	/****************************
+	 * Rendering
+	 ****************************/
+	function renderRow(row) {
+		const club = clubFor(row.school);
+		const strkClass = /^[WL]/i.test(row.strk) ? row.strk[0].toUpperCase() : "";
+
+		// data-team, data-match and data-club are the hooks live.js uses to find each school.
+		return `<tr class="${row.berth}">
+			<td>${esc(row.seed)}</td>
+			<td><div class="team" data-team="${esc(club.match[0])}" data-match="${esc(club.match.join("|"))}" data-club="${esc(club.name)}">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name" title="${esc(club.title)}">${esc(club.name)}</span><span class="abbr">${esc(club.code)}</span></div></td>
+			<td>${esc(row.w)}</td>
+			<td>${esc(row.l)}</td>
+			<td>${esc(row.pct)}</td>
+			<td>${esc(row.gb)}</td>
+			<td>${esc(row.overall)}</td>
+			<td class="strk ${strkClass}">${esc(row.strk)}</td>
+		</tr>`;
+	}
+
+	function renderGroup(group) {
+		// A div, not a section: the base stylesheet styles every section as a full-height page frame.
+		const conf = document.createElement("div");
+		conf.className = "conf";
+		conf.innerHTML = `<table>
+				<thead>
+					<tr><th scope="col">#</th><th scope="col">team</th><th scope="col">w</th><th scope="col">l</th><th scope="col">pct</th><th scope="col">gb</th><th scope="col">ovr</th><th scope="col">strk</th></tr>
+				</thead>
+				<tbody>${group.rows.map(renderRow).join("")}</tbody>
+			</table>`;
+		return conf;
+	}
+
+	// Redraws only when something changed, so live.js's dots survive a refresh that found nothing new.
+	let drawn = "";
+	async function load() {
+		if (document.hidden) return;
+		const html = await fetchText(STANDINGS_URL);
+		const groups = html ? parseStandings(html) : [];
+		const message = document.getElementById("message");
+
+		if (!groups.length) {
+			if (!drawn) message.textContent = "couldn’t load standings"; // after the first draw, keep the last good table
+			return;
+		}
+
+		markBerths(groups);
+		message.hidden = true;
+		document.getElementById("key").hidden = !groups.some((g) => g.rows.some((r) => r.berth));
+		const signature = JSON.stringify(groups);
+		if (signature === drawn) return;
+		drawn = signature;
+		document.getElementById("conferences").replaceChildren(...groups.map(renderGroup));
+		document.dispatchEvent(new CustomEvent("standings:rendered"));
+	}
+
+	load();
+	setInterval(load, REFRESH_MS);
+	document.addEventListener("visibilitychange", load); // catch up straight away after the tab was in the background
+})();
