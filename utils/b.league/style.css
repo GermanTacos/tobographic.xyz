@@ -352,6 +352,8 @@ footer.back h3 a {
 	line-height: 1.35;
 }
 .live-card .num {
+	position: relative;
+	overflow: hidden;
 	flex: none;
 	display: grid;
 	place-items: center;
@@ -361,6 +363,14 @@ footer.back h3 a {
 	background-color: #2A2A2A; /* Change the jersey badge backdrop color */
 	color: #989898; /* Change the jersey number color */
 	font-weight: bold;
+}
+.live-card .num img { /* a headshot covers the jersey number once it loads */
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: 50% 12%; /* headshots are usually wide with the face near the top */
 }
 .live-card .when {
 	margin-right: 8px;

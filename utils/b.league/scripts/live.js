@@ -23,6 +23,10 @@
 	const LIVE_POLL_MS = 20000; // per game with a feed (the feed itself updates about once a minute)
 	const IDLE_POLL_MS = 60000; // per game with no feed yet, i.e. not started
 
+	// Headshots live at .../roster/{TeamID}/{season}/{PlayerID}_03.png. The feed's TeamID and PlayerID match the site's.
+	// "v=" is a cache-busting stamp that differs per image; this assumes the image host ignores its value.
+	const PHOTO_URL = "https://bleague.bl.kuroco-img.app/v=1789592915/files/user/roster/";
+
 	const games = new Map();      // ScheduleKey -> { id, data, next, ended }
 	const clubs = new Map();      // short or full Japanese club name -> its .team element in the table
 	const liveByClub = new Map(); // the same names -> the feed data of that club's game in progress
@@ -49,11 +53,19 @@
 
 	const isOver = (data) => Boolean(data.Game.GameEndedFlg || data.PlayByPlays.at(-1)?.GameEndRowFlg);
 
+	// Logs a game's state once per change, so the console shows why a dot is or isn't there.
+	function note(key, game, state, detail = "") {
+		if (game.state === state) return;
+		game.state = state;
+		console.info(`[live] game ${key}: ${state} ${detail}`.trim());
+	}
+
 	// Reads latestid (two bytes) and fetches the full snapshot only when the id moved.
 	async function check(key, game) {
 		const id = (await fetchText(`${FEED_URL}${key}/latestid`))?.trim();
 		if (!/^\d+$/.test(id ?? "")) { // no feed yet: the game hasn't started
 			game.next = Date.now() + IDLE_POLL_MS;
+			note(key, game, "no feed", `(latestid: ${JSON.stringify(id ?? null)})`);
 			return;
 		}
 		game.next = Date.now() + LIVE_POLL_MS;
@@ -61,6 +73,8 @@
 		const data = await fetchJSON(`${FEED_URL}${key}/${id}.json`);
 		if (!data?.Game || !data.PlayByPlays) return;
 		Object.assign(game, { id, data, ended: isOver(data) }); // a finished game stops being polled
+		const g = data.Game;
+		note(key, game, game.ended ? "ended" : data.PlayByPlays.length ? "live" : "no plays yet", `(${g.HomeTeamShortNameJ} vs ${g.AwayTeamShortNameJ})`);
 	}
 
 	async function tick() {
@@ -105,7 +119,9 @@
 		for (const { data, ended } of games.values()) {
 			if (!data || ended || !data.PlayByPlays.length) continue;
 			for (const side of ["Home", "Away"]) {
-				liveByClub.set(data.Game[side + "TeamShortNameJ"], data).set(data.Game[side + "TeamNameJ"], data);
+				const short = data.Game[side + "TeamShortNameJ"], full = data.Game[side + "TeamNameJ"];
+				liveByClub.set(short, data).set(full, data);
+				if (clubs.size && !clubs.has(short) && !clubs.has(full)) console.warn("[live] no table row for", short, full);
 			}
 		}
 		for (const dot of document.querySelectorAll(".live")) dot.hidden = !liveData(dot);
@@ -151,13 +167,22 @@
 		return data.PlayByPlays.findLast((row) => !QUIET.has(row.ActionCD1)) ?? null;
 	}
 
+	const playerOf = (data, id) => (id ? [...data.HomeBoxscores, ...data.AwayBoxscores].find((p) => p.PlayerID === id) : null);
+
 	function playText(row, data) {
 		const verb = PLAY_VERBS[row.ActionCD1];
 		if (!verb) return String(row.PlayText ?? "").trim();
 		const shot = SHOT_STYLES[row.ActionCD2];
-		const player = [...data.HomeBoxscores, ...data.AwayBoxscores].find((p) => p.PlayerID && p.PlayerID === row.PlayerID1);
-		return [player?.PlayerNameE || row.PlayerNameJ1, shot && row.ActionCD1 >= 3 && row.ActionCD1 <= 6 ? verb.replace("2-pointer", shot) : verb]
+		return [playerOf(data, row.PlayerID1)?.PlayerNameE || row.PlayerNameJ1, shot && row.ActionCD1 >= 3 && row.ActionCD1 <= 6 ? verb.replace("2-pointer", shot) : verb]
 			.filter(Boolean).join(" ");
+	}
+
+	// The season folder comes from the game's date: 2026-27 runs from July 2026 to June 2027.
+	function headshotUrl(player, data) {
+		const date = new Date(Number(/\d+/.exec(data.Game.GameDateTime)?.[0]));
+		if (!player?.TeamID || isNaN(date)) return "";
+		const start = date.getUTCMonth() >= 6 ? date.getUTCFullYear() : date.getUTCFullYear() - 1;
+		return `${PHOTO_URL}${player.TeamID}/${start}-${String((start + 1) % 100).padStart(2, "0")}/${player.PlayerID}_03.png`;
 	}
 
 	/****************************
@@ -188,7 +213,8 @@
 		const text = row && playText(row, data);
 		let playHtml = "";
 		if (text) {
-			const number = row.PlayerNo1 ? `<span class="num">${esc(row.PlayerNo1)}</span>` : "";
+			const photo = headshotUrl(playerOf(data, row.PlayerID1), data);
+			const number = row.PlayerNo1 ? `<span class="num">${esc(row.PlayerNo1)}${photo ? `<img src="${esc(photo)}" alt="">` : ""}</span>` : "";
 			const points = row.Success === 1 && POINTS[row.ActionCD1] ? `<span class="pts">+${POINTS[row.ActionCD1]}</span>` : "";
 			playHtml = `<div class="play">${number}<div><span class="when">${esc(periodLabel(row.Period))} ${esc(row.RestTime)}</span>${esc(text)}${points}</div></div>`;
 		}
@@ -201,6 +227,8 @@
 		if (html === cardHtml) return; // nothing new; skip the redraw so images don't flicker
 		cardHtml = html;
 		card.innerHTML = html;
+		// Not every player has a photo: drop the image rather than show a broken one; the jersey number stays underneath.
+		card.querySelector(".num img")?.addEventListener("error", (e) => e.target.remove(), { once: true });
 		positionCard();
 	}
 
