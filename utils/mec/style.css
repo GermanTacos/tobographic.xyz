@@ -58,10 +58,36 @@ section.wide {
 	cursor: pointer;
 	user-select: none;
 }
-.toggle input {
+.toggle input { /* drawn by hand: a native checkbox can't be filled gray when empty */
+	appearance: none;
+	-webkit-appearance: none;
+	display: grid;
+	place-content: center;
+	flex: none;
+	width: 1em;
+	height: 1em;
 	margin: 0;
-	accent-color: #E5B75B; /* Change the checked color, same as the playoff gold */
+	border: 0;
+	border-radius: 2px;
+	background-color: #383838; /* Change the empty box color, same as the line borders */
 	cursor: pointer;
+}
+.toggle input:checked {
+	background-color: #E5B75B; /* Change the checked box color, same as the playoff gold */
+}
+.toggle input:checked::after { /* the check mark */
+	content: "";
+	width: 0.28em;
+	height: 0.52em;
+	margin-top: -0.08em;
+	border-style: solid;
+	border-color: #202020; /* Change the check mark color */
+	border-width: 0 2px 2px 0;
+	transform: rotate(45deg);
+}
+.toggle input:focus-visible { /* keyboard users only; a mouse click shows no outline */
+	outline: 2px solid #E5B75B;
+	outline-offset: 2px;
 }
 
 /****************************
