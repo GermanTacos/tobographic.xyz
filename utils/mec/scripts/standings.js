@@ -17,22 +17,35 @@
 	/****************************
 	 * Schools
 	 * Each entry: [names the schools go by, run through norm() so spelling doesn't matter] plus the name for
-	 * the table, the full name for the tooltip and a short code for small screens and the live overlay.
+	 * the table, the full name for the tooltip, a short code for small screens and the live overlay, and the
+	 * logo (the standings page doesn't carry logos, so they're listed here; each school's URL differs).
 	 * A school that's missing falls back to the page's own name and is logged to the console.
 	 ****************************/
 	const CLUBS = [
-		{ match: ["daviselkins"], name: "davis & elkins", title: "Davis & Elkins", code: "D&E" },
-		{ match: ["glenvillest"], name: "glenville st", title: "Glenville State", code: "GLE" },
-		{ match: ["shawneest"], name: "shawnee st", title: "Shawnee State", code: "SHA" },
-		{ match: ["wvwesleyan", "wvwesleyancollege"], name: "wv wesleyan", title: "West Virginia Wesleyan", code: "WVW" },
-		{ match: ["wheeling", "wheelinguniversity"], name: "wheeling", title: "Wheeling", code: "WHE" },
-		{ match: ["westliberty", "westlibertyuniversity"], name: "west liberty", title: "West Liberty", code: "WLU" },
-		{ match: ["concord", "concorduniversity"], name: "concord", title: "Concord", code: "CON" },
-		{ match: ["charleston", "charlestonwv", "universityofcharleston", "ucharleston"], name: "charleston", title: "Charleston", code: "CHA" },
-		{ match: ["fairmontst"], name: "fairmont st", title: "Fairmont State", code: "FAI" },
-		{ match: ["frostburgst"], name: "frostburg st", title: "Frostburg State", code: "FRO" },
-		{ match: ["pointpark"], name: "point park", title: "Point Park", code: "PPU" },
-		{ match: ["wvst", "wvstuniversity"], name: "wv state", title: "West Virginia State", code: "WVS" }
+		{ match: ["daviselkins"], name: "davis & elkins", title: "Davis & Elkins", code: "D&E",
+		  logo: "https://mountaineast.org/images/logos/senators_logo_alt_rgb_DavisElkins.png" },
+		{ match: ["glenvillest"], name: "glenville st", title: "Glenville State", code: "GLE",
+		  logo: "https://mountaineast.org/images/logos/Glenville_State-.png" },
+		{ match: ["shawneest"], name: "shawnee st", title: "Shawnee State", code: "SHA",
+		  logo: "https://mountaineast.org/images/logos/Shawnee_State_2025.png" },
+		{ match: ["wvwesleyan", "wvwesleyancollege"], name: "wv wesleyan", title: "West Virginia Wesleyan", code: "WVW",
+		  logo: "https://mountaineast.org/images/logos/West-Virginia-Wesleyan.png" },
+		{ match: ["wheeling", "wheelinguniversity"], name: "wheeling", title: "Wheeling", code: "WHE",
+		  logo: "https://mountaineast.org/images/logos/header_logo.png" },
+		{ match: ["westliberty", "westlibertyuniversity"], name: "west liberty", title: "West Liberty", code: "WLU",
+		  logo: "https://mountaineast.org/images/2022/1/10/WLU_logo_black_gold.png" },
+		{ match: ["concord", "concorduniversity"], name: "concord", title: "Concord", code: "CON",
+		  logo: "https://mountaineast.org/images/logos/Concord.png" },
+		{ match: ["charleston", "charlestonwv", "universityofcharleston", "ucharleston"], name: "charleston", title: "Charleston", code: "CHA",
+		  logo: "https://mountaineast.org/images/logos/uoc.png" },
+		{ match: ["fairmontst"], name: "fairmont st", title: "Fairmont State", code: "FAI",
+		  logo: "https://mountaineast.org/images/2018/8/17/fsu_logo.png" },
+		{ match: ["frostburgst"], name: "frostburg st", title: "Frostburg State", code: "FRO",
+		  logo: "https://mountaineast.org/images/logos/frostburg.png" },
+		{ match: ["pointpark"], name: "point park", title: "Point Park", code: "PPU",
+		  logo: "https://mountaineast.org/images/2026/6/24/Pioneers_Logo_Full_Color.png" },
+		{ match: ["wvst", "wvstuniversity"], name: "wv state", title: "West Virginia State", code: "WVS",
+		  logo: "https://mountaineast.org/images/logos/y17.png" }
 	];
 	const unknownClubs = new Set();
 
@@ -118,13 +131,14 @@
 	 ****************************/
 	function renderRow(row) {
 		const club = clubFor(row.school);
+		const logo = club.logo || row.logo; // a school that's missing from CLUBS falls back to whatever the page had
 		const [w, l, pct] = confOnly() ? [row.w, row.l, row.pct] : [row.ow, row.ol, row.opct];
 		const strkClass = /^[WL]/i.test(row.strk) ? row.strk[0].toUpperCase() : "";
 
 		// data-team, data-match and data-club are the hooks live.js uses to find each school.
 		return `<tr class="${row.berth}">
 			<td>${esc(row.seed)}</td>
-			<td><div class="team" data-team="${esc(club.match[0])}" data-match="${esc(club.match.join("|"))}" data-club="${esc(club.name)}">${row.logo ? `<img src="${esc(row.logo)}" alt="" loading="lazy">` : ""}<span class="name" title="${esc(club.title)}">${esc(club.name)}</span><span class="abbr">${esc(club.code)}</span></div></td>
+			<td><div class="team" data-team="${esc(club.match[0])}" data-match="${esc(club.match.join("|"))}" data-club="${esc(club.name)}">${logo ? `<img src="${esc(logo)}" alt="" loading="lazy">` : ""}<span class="name" title="${esc(club.title)}">${esc(club.name)}</span><span class="abbr">${esc(club.code)}</span></div></td>
 			<td>${esc(w)}</td>
 			<td>${esc(l)}</td>
 			<td>${esc(pct)}</td>
