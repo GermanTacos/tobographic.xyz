@@ -8,23 +8,27 @@
  * drawn the table (each school is a .team[data-team] element). Remove this file's <script> tag and the
  * standings page works exactly as before.
  *
- * Data: the NCAA's public scoreboard feed for Division II men's basketball (the one behind ncaa.com):
- *   {NCAA}/scoreboard/basketball-men/d2/{yyyy}/{mm}/{dd}/scoreboard.json   the day's games and their state
- *   {NCAA}/game/{id}/pbp.json                                            one game's play-by-play
- * UNVERIFIED: the field names below follow the feed's usual shape but haven't been checked against a live
+ * Data: ncaa-api.henrygd.me, a community-run wrapper that mirrors ncaa.com's own paths (the NCAA's raw
+ * data.ncaa.com/casablanca scoreboard returned 404 for D2 men's basketball):
+ *   {NCAA}/scoreboard/basketball-men/d2/{yyyy}/{mm}/{dd}   the day's games and their state
+ *   {NCAA}/game/{id}/play-by-play                          one game's play-by-play
+ * UNVERIFIED: the field names below follow the feed's documented shape but haven't been checked against a live
  * MEC game, and the NCAA doesn't always have play-by-play for D2. Open the console during a game: every
  * live game is logged once, and a school that can't be matched to a table row is warned about.
+ * The public instance allows 5 requests per second per IP; behind the worker's cache that's plenty, but it's
+ * a free service with no promises, and the same code runs against a copy you host (docker: henrygd/ncaa-api)
+ * by changing NCAA below and the allowlist in worker.js.
  * No games, no dots: in the offseason nothing here can show up.
  *
  ****************************/
 (() => {
-	const NCAA = "https://data.ncaa.com/casablanca";
+	const NCAA = "https://ncaa-api.henrygd.me";
 	const boardUrl = () => {
 		// The feed's day is Eastern time.
 		const [y, m, d] = new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" }).split("-");
-		return `${NCAA}/scoreboard/basketball-men/d2/${y}/${m}/${d}/scoreboard.json`;
+		return `${NCAA}/scoreboard/basketball-men/d2/${y}/${m}/${d}`;
 	};
-	const pbpUrl = (id) => `${NCAA}/game/${id}/pbp.json`;
+	const pbpUrl = (id) => `${NCAA}/game/${id}/play-by-play`;
 
 	const LIVE_REFRESH_MS = 60000; // how often to check which schools are playing
 	const CARD_REFRESH_MS = 10000; // how often the open overlay updates
