@@ -17,9 +17,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		'https://cdn.fireemblemwiki.org/5/54/Ma_fe16_brigand_hilda_playable.gif',
 		'https://cdn.fireemblemwiki.org/f/f6/Ma_fe16_cavalier_ferdinand_playable.gif',
 		'https://cdn.fireemblemwiki.org/f/f1/Ma_fe16_priest_mercedes_playable.gif',
-		'https://static.wikia.nocookie.net/fireemblem/images/e/e0/Yunaka_Run.gif',
-		'https://static.wikia.nocookie.net/fireemblem/images/6/6a/Rosado_Run.gif',
-		'https://static.wikia.nocookie.net/fireemblem/images/0/00/Goldmary_Run.gif'
+		// 'https://static.wikia.nocookie.net/fireemblem/images/e/e0/Yunaka_Run.gif',
+		// 'https://static.wikia.nocookie.net/fireemblem/images/6/6a/Rosado_Run.gif',
+		// 'https://static.wikia.nocookie.net/fireemblem/images/0/00/Goldmary_Run.gif'
 	];
 	
 	// grab random image from table
