@@ -1,21 +1,24 @@
-<!DOCTYPE HTML>
-
-<html>
+<!doctype html>
+<html lang="en">
 
     <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>nba</title>
 
-        <link href="https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&amp;display=swap">
 
-        <link href="../../style.css" type="text/css" rel="stylesheet"/> <!-- site -->
-        <link href="style.css" type="text/css" rel="stylesheet"/> 		<!-- page -->
+        <!-- Site-wide base, then the dashboard styles shared by every standings page, then this page's additions. Adjust the first two paths if this folder moves. -->
+        <link rel="stylesheet" href="../../style.css">
+        <link rel="stylesheet" href="../dashboard.css">
+        <link rel="stylesheet" href="style.css">
     </head>
 
     <body>
-        <section class="wide">
+        <section class="dashboard">
             <header>
                 <h1>nba</h1>
             </header>
@@ -25,14 +28,14 @@
             </main>
             <footer class="back">
                 <p id="key" class="key" hidden>
-                    <span><i class="swatch direct"></i>playoff</span>
-                    <span><i class="swatch playin"></i>play-in</span>
+                    <span><span class="swatch direct"></span>playoff</span>
+                    <span><span class="swatch playin"></span>play-in</span>
                 </p>
                 <h3><a href="../../">back</a></h3>
             </footer>
         </section>
 
-        <!-- helper first, then standings, then live -->
+        <!-- Order matters: helpers first, then standings, then the optional live-game layer. -->
         <script src="scripts/helpers.js" defer></script>
         <script src="scripts/standings.js" defer></script>
         <script src="scripts/live.js" defer></script>

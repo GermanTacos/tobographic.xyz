@@ -1,22 +1,24 @@
-<!DOCTYPE HTML>
-
-<html>
+<!doctype html>
+<html lang="en">
 
     <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title>mec</title>
 
-        <link href="https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400..700;1,400..700&amp;display=swap">
 
-        <!-- Site-wide base styles first, then this page's additions. Adjust the first path if this folder moves. -->
-        <link href="../../style.css" type="text/css" rel="stylesheet"/>
-        <link href="style.css" type="text/css" rel="stylesheet"/>
+        <!-- Site-wide base, then the dashboard styles shared by every standings page, then this page's additions. Adjust the first two paths if this folder moves. -->
+        <link rel="stylesheet" href="../../style.css">
+        <link rel="stylesheet" href="../dashboard.css">
+        <link rel="stylesheet" href="style.css">
     </head>
 
     <body>
-        <section class="wide">
+        <section class="dashboard">
             <header class="with-toggle">
                 <h1>mec</h1>
                 <label class="toggle"><input type="checkbox" id="conf-only">conf only</label>
@@ -27,8 +29,8 @@
             </main>
             <footer class="back">
                 <p id="key" class="key" hidden>
-                    <span><i class="swatch direct"></i>bye</span>
-                    <span><i class="swatch playoff"></i>tournament</span>
+                    <span><span class="swatch direct"></span>bye</span>
+                    <span><span class="swatch playoff"></span>tournament</span>
                 </p>
                 <h3><a href="../../">back</a></h3>
             </footer>

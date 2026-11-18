@@ -1,11 +1,33 @@
 /****************************
  *
+ * Tokens
+ * Colors and the content width live here, so a retheme is a one-file edit.
+ * The dashboard-only colors live in utils/dashboard.css.
+ *
+ ****************************/
+:root {
+	--content-width: 500px; /* Change width to increase the amount of nav links */
+
+	--color-bg: #181818; /* Change the page background color */
+	--color-line: #383838; /* Change the border color */
+
+	--color-text-strong: #989898; /* Change the greeting text color */
+	--color-text: #888888; /* Change the date text color */
+	--color-text-muted: #686868; /* Change the navigation header text color */
+	--color-text-footer: #787878; /* Change the time color */
+
+	--color-accent: #e5b75b; /* Change the navigation link text color */
+	--color-accent-hover: #e0cca8; /* Change the navigation link text color on hover and focus */
+}
+
+/****************************
+ *
  * Default Styling
  *
  ****************************/
 *,
-*:before,
-*:after {
+*::before,
+*::after {
 	box-sizing: inherit;
 }
 html {
@@ -20,6 +42,26 @@ body {
 	position: relative;
 	font-family: "Cabin", sans-serif;
 }
+[hidden] {
+	display: none !important; /* the hidden attribute always wins, even over an element's own display rule */
+}
+
+/****************************
+ *
+ * Links
+ *
+ ****************************/
+a {
+	color: var(--color-accent);
+	text-decoration: none;
+	text-transform: lowercase;
+}
+a:hover,
+a:focus {
+	color: var(--color-accent-hover);
+	transition: 0.5s color ease; /* only on hover and focus, so the color fades in and snaps back */
+}
+
 /****************************
  *
  * Section
@@ -29,13 +71,13 @@ section {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	margin: 0;
 	height: 100%;
 	width: 100%;
-	background-color: #181818; /* Change the background color, should be the same as #loading-overlay */
-	overflow: auto;
 	padding: 25px;
+	overflow: auto;
+	background-color: var(--color-bg);
 }
+
 /****************************
  *
  * Header
@@ -43,161 +85,76 @@ section {
  ****************************/
 header {
 	position: relative;
-	margin-top: 25px;
-	margin-left: auto;
-	margin-right: auto;
-	margin-bottom: 10px;
+	margin: 25px auto 10px;
 	width: 100%;
-	max-width: 500px;
+	max-width: var(--content-width);
 }
 header h1 {
 	display: inline-block;
-	margin-top: 0;
-	margin-left: 0px;
-	margin-right: 0px;
-	margin-bottom: 5px;
-	color: #989898; /* Change the greeting text color */
+	margin: 0 0 5px;
+	color: var(--color-text-strong);
 	font-size: clamp(1.5em, 12vw, 3em);
 	font-weight: bold;
-	text-align: left;
 }
 header h2 {
 	margin: 0;
-	color: #888888; /* Change the date text color */
+	color: var(--color-text);
 	font-size: clamp(1em, 8vw, 2em);
-	font-weight: regular;
-	text-align: left;
+	font-weight: bold; /* was "regular", which isn't a valid value, so browsers already rendered bold; use 400 for a lighter date */
 }
-header h2 a {
-	margin: 0;
-	padding: 0;
-	color: #E5B75B; /* Change the navigation link text color */
-	font-weight: 400;
-	text-align: right;
-	text-decoration: none;
-	text-transform: lowercase;
-}
-header h2 a:hover,
-header h2 a:focus {
-	color: #E0CCA8; /* Change the navigation link text color on hover and focus */
-	transition: .5s color ease;
-}
+
 /****************************
  *
  * Main
  *
  ****************************/
-main nav {
-	padding-top: 10px;
+main nav,
+main .info {
 	margin: 0 auto;
-	padding-left: 0;
-	padding-right: 0;
-	padding-bottom: 10px;
-	border-bottom-width: 2px;
-	border-bottom-style: solid;
-	border-bottom-color: #383838; /* Change the bottom border color */
-	width: 100%; /* Change width and max-width to increase the amount of nav links */
-	max-width: 500px; /* Change width and max-width to increase the amount of nav links */
+	padding: 10px 0;
+	border-bottom: 2px solid var(--color-line);
+	width: 100%;
+	max-width: var(--content-width);
 }
-main nav:first-child {
-	border-top-width: 2px;
-	border-top-style: solid;
-	border-top-color: #383838; /* Change the top border color */
+main nav:first-child,
+main .info:first-child {
+	border-top: 2px solid var(--color-line);
 }
 main nav h5 {
 	display: inline-block;
 	margin: 0;
 	padding-right: 5px;
-	color: #686868; /* Change the navigation header text color */
+	color: var(--color-text-muted);
 	font-size: clamp(0.75em, 6vw, 1.5em);
 	font-weight: 400;
 	text-transform: lowercase;
-	text-align: right;
-}
-main nav h6 {
-	display: inline-block;
-	margin: 0;
-	padding-right: 5px;
-	color: #181818; /* Change the navigation header text color */
-	font-size: clamp(0.75em, 6vw, 1.5em);
-	font-weight: 400;
-	text-transform: lowercase;
-	text-align: right;
 }
 main nav ul {
 	display: inline-block;
 	margin: 0;
 	padding: 0;
-	list-style-type: none;
+	list-style: none;
 }
 main nav ul li {
 	display: inline-block;
-	padding-top: 0;
-	padding-left: 5px;
-	padding-right: 5px;
-	padding-bottom: 0;
-	margin: 0;
-	text-align: right;
+	padding: 0 5px;
 }
 main nav ul li a {
-	margin: 0;
-	padding: 0;
-	color: #E5B75B; /* Change the navigation link text color */
 	font-size: clamp(0.75em, 6vw, 1.5em);
-	font-weight: 400;
-	text-align: right;
-	text-decoration: none;
-	text-transform: lowercase;
-}
-main nav ul li a:hover,
-main nav ul li a:focus {
-	color: #E0CCA8; /* Change the navigation link text color on hover and focus */
-	transition: .5s color ease;
-}
-main .info {
-	padding-top: 10px;
-	margin: 0 auto;
-	padding-left: 0;
-	padding-right: 0;
-	padding-bottom: 10px;
-	border-bottom-width: 2px;
-	border-bottom-style: solid;
-	border-bottom-color: #383838; /* Change the bottom border color */
-	width: 100%; /* Change width and max-width to increase the amount of nav links */
-	max-width: 500px; /* Change width and max-width to increase the amount of nav links */
-}
-main .info:first-child {
-	border-top-width: 2px;
-	border-top-style: solid;
-	border-top-color: #383838; /* Change the top border color */
 }
 main .info p {
-	display: inline-block;
+	display: inline-block; /* not block: keeps the line spacing between paragraphs as it has always been */
 	margin: 0;
 	padding-right: 5px;
-	color: #686868; /* Change the navigation header text color */
+	color: var(--color-text-muted);
 	font-size: clamp(0.5em, 6vw, 1em);
 	font-weight: 400;
 	text-transform: lowercase;
-	text-align: left;
 }
 main .info p + p {
-  margin-block-start: 0.75em;
+	margin-block-start: 0.75em;
 }
-main .info p a {
-	margin: 0;
-	padding: 0;
-	color: #E5B75B; /* Change the navigation link text color */
-	font-weight: 400;
-	text-align: right;
-	text-decoration: none;
-	text-transform: lowercase;
-}
-main .info p a:hover,
-main .info p a:focus {
-	color: #E0CCA8; /* Change the navigation link text color on hover and focus */
-	transition: .5s color ease;
-}
+
 /****************************
  *
  * Footer
@@ -205,55 +162,26 @@ main .info p a:focus {
  ****************************/
 footer {
 	position: relative;
-	margin-top: 5px;
-	margin-left: auto;
-	margin-right: auto;
-	margin-bottom: 25px;
-	width: 100%; /* Change width and max-width to increase the amount of nav links */
-	max-width: 500px; /* Change width and max-width to increase the amount of nav links */
+	margin: 5px auto 25px;
+	width: 100%;
+	max-width: var(--content-width);
 }
 footer h3 {
 	margin: 0;
-	color: #787878; /* Change the time color */
+	color: var(--color-text-footer);
 	font-size: clamp(1em, 12vw, 2em);
 	font-weight: bold;
 	text-align: right;
 }
-footer h3 a { /* For subpage back button */
-	margin: 0;
-	padding: 0;
-	color: #E5B75B; /* Change the navigation link text color */
-	font-weight: bold;
-	text-align: right;
-	text-decoration: none;
-	text-transform: lowercase;
-}
-footer h3 a:hover,
-footer h3 a:focus {
-	color: #E0CCA8; /* Change the navigation link text color on hover and focus */
-	transition: .5s color ease;
-}
 footer h4 {
 	margin: 0;
-	color: #787878; /* Change the time color */
+	color: var(--color-text-footer);
 	font-size: clamp(0.75em, 8vw, 1.5em);
 	font-weight: 400;
 	text-align: right;
 }
-footer h4 a { /* For subpage back button */
-	margin: 0;
-	padding: 0;
-	color: #E5B75B; /* Change the navigation link text color */
-	font-weight: 400;
-	text-align: right;
-	text-decoration: none;
-	text-transform: lowercase;
-}
-footer h4 a:hover,
-footer h4 a:focus {
-	color: #E0CCA8; /* Change the navigation link text color on hover and focus */
-	transition: .5s color ease;
-}
+
+/* Subpages: the footer holds a back link (and sometimes a key) instead of the clock */
 footer.back {
 	display: flex;
 	flex-wrap: wrap;
@@ -261,36 +189,22 @@ footer.back {
 	justify-content: space-between;
 	gap: 5px 20px;
 }
+footer.back h3,
 footer.back h4 {
 	margin-left: auto; /* keeps the link on the right even when the key is hidden or wraps */
+}
+footer.back h3 {
 	font-size: clamp(0.75em, 8vw, 1.5em);
 }
-footer.back h4 a {
+footer.back h3 a {
 	font-weight: 400;
 }
+
 /****************************
  *
  * Images
  *
  ****************************/
-.left-image {
-	position: absolute;
-	bottom: 0px;
-	left: 0px;
-	width: auto;
-	height: 100%;
-	filter: drop-shadow(0px 0px 20px #000000);
-	z-index: 1337;
-}
-.right-image {
-	position: absolute;
-	bottom: 0px;
-	right: 0px;
-	width: auto;
-	height: 100%;
-	filter: drop-shadow(0px 0px 20px #000000);
-	z-index: 1337;
-}
 .map-token {
 	position: fixed;
 	bottom: 10px;
