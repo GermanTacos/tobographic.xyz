@@ -1,34 +1,117 @@
-// render results from index.js for display
+"use strict";
 
-function renderGrid(list) {
-	const container = document.getElementById("results");
-	container.innerHTML = "";
-
-	if (list.length === 0) {
-		container.textContent = "No deals to show!";
-		return;
+// Draws the deals index.js hands over, as a card grid or a table.
+const { renderGrid, renderTable } = (() => {
+	// Shorthand: el("p", "deal-note", "text") builds <p class="deal-note">text</p>.
+	function el(tag, className, text) {
+		const node = document.createElement(tag);
+		if (className) node.className = className;
+		if (text !== undefined) node.textContent = text;
+		return node;
 	}
 
-	const grid = document.createElement("div");
-	grid.className = "deal-grid";
-	list.forEach(deal => grid.appendChild(buildCard(deal)));
-	container.appendChild(grid);
-}
+	const dollars = (n) => `$${n.toFixed(2)}`;
+	const discountText = (deal) => `${deal.discountPct}% off`;
+	const emptyMark = () => el("span", "deal-empty", "—");
 
-function renderTable(list) {
-	const container = document.getElementById("results");
-	container.innerHTML = "";
+	function buildPriceEl(deal) {
+		const price = el("p", "deal-price");
 
-	if (list.length === 0) {
-		container.textContent = "No deals to show!";
-		return;
+		if (deal.postCoupon != null) {
+			// highlight deal price in green
+			if (deal.preCoupon != null) price.append(el("span", "pre", dollars(deal.preCoupon)));
+			price.append(el("span", "post", dollars(deal.postCoupon)));
+		} else if (deal.preCoupon != null) {
+			// show original price with no strikethrough
+			price.append(el("span", "", dollars(deal.preCoupon)));
+		} else {
+			price.append(emptyMark());
+		}
+
+		return price;
 	}
 
-	const table = document.createElement("table");
-	table.className = "deal-table";
+	function buildLinksEl(deal) {
+		const links = el("div", "deal-links");
 
-	const thead = document.createElement("thead");
-	thead.innerHTML = `
+		// affiliate link only to support CrownPuff :)
+		if (deal.affiliateLink) {
+			const buyLink = el("a", "", "View Deal");
+			buyLink.href = deal.affiliateLink;
+			buyLink.target = "_blank";
+			buyLink.rel = "noopener noreferrer";
+			links.append(buyLink);
+		}
+
+		return links;
+	}
+
+	function buildCard(deal) {
+		const card = el("div", "deal-card");
+		card.append(el("h3", "", deal.name), buildPriceEl(deal));
+
+		if (deal.discountPct != null) card.append(el("p", "deal-discount", discountText(deal)));
+
+		if (deal.note) {
+			card.append(el("p", "deal-note", deal.note));
+		} else {
+			// keep link row pinned to bottom
+			const spacer = el("div");
+			spacer.style.marginBottom = "auto";
+			card.append(spacer);
+		}
+
+		card.append(buildLinksEl(deal));
+		return card;
+	}
+
+	function buildRow(deal) {
+		const cell = (...children) => {
+			const td = el("td");
+			td.append(...children);
+			return td;
+		};
+
+		const row = el("tr");
+		row.append(
+			cell(el("span", "deal-name", deal.name)),
+			cell(buildPriceEl(deal)),
+			cell(deal.discountPct != null ? el("span", "deal-discount", discountText(deal)) : emptyMark()),
+			cell(...(deal.note ? [el("span", "deal-note", deal.note)] : [])),
+			cell(buildLinksEl(deal))
+		);
+		return row;
+	}
+
+	// Clears the results area, or shows the empty message. Returns the container when there is something to draw.
+	function startRender(list) {
+		const container = document.getElementById("results");
+		container.innerHTML = "";
+
+		if (list.length === 0) {
+			container.textContent = "No deals to show!";
+			return null;
+		}
+		return container;
+	}
+
+	function renderGrid(list) {
+		const container = startRender(list);
+		if (!container) return;
+
+		const grid = el("div", "deal-grid");
+		grid.append(...list.map((deal) => buildCard(deal)));
+		container.append(grid);
+	}
+
+	function renderTable(list) {
+		const container = startRender(list);
+		if (!container) return;
+
+		const table = el("table", "deal-table");
+
+		const thead = el("thead");
+		thead.innerHTML = `
 		<tr>
 			<th>Name</th>
 			<th>Price</th>
@@ -36,136 +119,13 @@ function renderTable(list) {
 			<th>Note</th>
 			<th>Link</th>
 		</tr>`;
-	table.appendChild(thead);
 
-	const tbody = document.createElement("tbody");
-	list.forEach(deal => tbody.appendChild(buildRow(deal)));
-	table.appendChild(tbody);
+		const tbody = el("tbody");
+		tbody.append(...list.map((deal) => buildRow(deal)));
 
-	container.appendChild(table);
-}
-
-function buildPriceEl(deal) {
-	const price = document.createElement("p");
-	price.className = "deal-price";
-
-	if (deal.postCoupon != null) {
-		// highlight deal price in green
-		if (deal.preCoupon != null) {
-			const pre = document.createElement("span");
-			pre.className = "pre";
-			pre.textContent = `$${deal.preCoupon.toFixed(2)}`;
-			price.appendChild(pre);
-		}
-		const post = document.createElement("span");
-		post.className = "post";
-		post.textContent = `$${deal.postCoupon.toFixed(2)}`;
-		price.appendChild(post);
-	} else if (deal.preCoupon != null) {
-		// show original price with no strikethrough
-		const plain = document.createElement("span");
-		plain.textContent = `$${deal.preCoupon.toFixed(2)}`;
-		price.appendChild(plain);
-	} else {
-		const empty = document.createElement("span");
-		empty.className = "deal-empty";
-		empty.textContent = "—";
-		price.appendChild(empty);
+		table.append(thead, tbody);
+		container.append(table);
 	}
 
-	return price;
-}
-
-function buildLinksEl(deal) {
-	const links = document.createElement("div");
-	links.className = "deal-links";
-
-	// affiliate link only to support CrownPuff :)
-	if (deal.affiliateLink) {
-		const buyLink = document.createElement("a");
-		buyLink.href = deal.affiliateLink;
-		buyLink.target = "_blank";
-		buyLink.rel = "noopener noreferrer";
-		buyLink.textContent = "View Deal";
-		links.appendChild(buyLink);
-	}
-
-	return links;
-}
-
-function buildCard(deal) {
-	const card = document.createElement("div");
-	card.className = "deal-card";
-
-	const title = document.createElement("h3");
-	title.textContent = deal.name;
-	card.appendChild(title);
-
-	card.appendChild(buildPriceEl(deal));
-
-	if (deal.discountPct != null) {
-		const discount = document.createElement("p");
-		discount.className = "deal-discount";
-		discount.textContent = `${deal.discountPct}% off`;
-		card.appendChild(discount);
-	}
-
-	if (deal.note) {
-		const note = document.createElement("p");
-		note.className = "deal-note";
-		note.textContent = deal.note;
-		card.appendChild(note);
-	} else {
-		// keep link row pinned to bottom
-		const spacer = document.createElement("div");
-		spacer.style.marginBottom = "auto";
-		card.appendChild(spacer);
-	}
-
-	card.appendChild(buildLinksEl(deal));
-	return card;
-}
-
-function buildRow(deal) {
-	const row = document.createElement("tr");
-
-	const nameCell = document.createElement("td");
-	const name = document.createElement("span");
-	name.className = "deal-name";
-	name.textContent = deal.name;
-	nameCell.appendChild(name);
-	row.appendChild(nameCell);
-
-	const priceCell = document.createElement("td");
-	priceCell.appendChild(buildPriceEl(deal));
-	row.appendChild(priceCell);
-
-	const discountCell = document.createElement("td");
-	if (deal.discountPct != null) {
-		const discount = document.createElement("span");
-		discount.className = "deal-discount";
-		discount.textContent = `${deal.discountPct}% off`;
-		discountCell.appendChild(discount);
-	} else {
-		const empty = document.createElement("span");
-		empty.className = "deal-empty";
-		empty.textContent = "—";
-		discountCell.appendChild(empty);
-	}
-	row.appendChild(discountCell);
-
-	const noteCell = document.createElement("td");
-	if (deal.note) {
-		const note = document.createElement("span");
-		note.className = "deal-note";
-		note.textContent = deal.note;
-		noteCell.appendChild(note);
-	}
-	row.appendChild(noteCell);
-
-	const linkCell = document.createElement("td");
-	linkCell.appendChild(buildLinksEl(deal));
-	row.appendChild(linkCell);
-
-	return row;
-}
+	return { renderGrid, renderTable };
+})();
