@@ -9,6 +9,8 @@
  *
  ****************************/
 (() => {
+	const { esc, getJSON } = Dashboard;
+
 	// Tried in order; the first one that returns usable data wins.
 	const STANDINGS_URLS = [
 		"https://site.web.api.espn.com/apis/v2/sports/basketball/nba/standings?region=us&lang=en&contentorigin=espn",
@@ -138,4 +140,4 @@
 	}
 
 	init();
-})();
+})();

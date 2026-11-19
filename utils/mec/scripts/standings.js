@@ -9,6 +9,8 @@
  *
  ****************************/
 (() => {
+	const { esc, fetchText } = Dashboard;
+
 	const STANDINGS_URL = "https://mountaineast.org/standings.aspx?path=mbb";
 	const REFRESH_MS = 60000;   // standings move when games end
 	const BYES = 6;             // the top six seeds skip the first round
@@ -210,4 +212,4 @@
 	load();
 	setInterval(load, REFRESH_MS);
 	document.addEventListener("visibilitychange", load); // catch up straight away after the tab was in the background
-})();
+})();

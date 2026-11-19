@@ -9,6 +9,8 @@
  *
  ****************************/
 (() => {
+	const { esc, fetchText } = Dashboard;
+
 	const STANDINGS_URL = "https://www.bleague.jp/standings/";
 	const REFRESH_MS = 60000; // standings move when games end
 

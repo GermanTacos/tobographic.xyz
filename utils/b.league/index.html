@@ -4,7 +4,6 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-		<meta name="description" content="b.league premier standings and live game tracker">
 
         <title>b.league</title>
 
@@ -36,10 +35,11 @@
             </footer>
         </section>
 
-        <!-- Order matters: helpers first, then standings, then the optional live-game layer. -->
-        <script src="scripts/helpers.js" defer></script>
+        <!-- Order matters: shared code first, then standings, then the optional live-game layer and its easter egg. -->
+        <!-- bleague.jp and its game-data bucket only answer to bleague.jp itself, so every request goes through this Cloudflare Worker proxy. -->
+        <script src="../dashboard.js" data-proxy="https://bleague-proxy.tiny-river-02cf.workers.dev/?url=" defer></script>
         <script src="scripts/standings.js" defer></script>
         <script src="scripts/live.js" defer></script>
-        <script src="scripts/egg.js" defer></script>
+        <script src="../egg.js" data-player="Sota Oura" data-bg="#03406b" data-accent="#e10d13" data-text="#ffffff" defer></script>
     </body>
 </html>

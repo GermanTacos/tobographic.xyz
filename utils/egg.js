@@ -4,22 +4,25 @@
  *
  * Easter egg
  * Recolors the live score overlay for a few seconds when a chosen player scores.
- * Fully self-contained: it never calls or edits live.js, it only watches #live-card, the overlay
- * live.js already draws, and reads what it renders. Load it AFTER live.js. Remove its <script>
- * tag and everything is exactly as before.
+ * Fully self-contained: it never calls or edits the live script, it only watches #live-card, the overlay
+ * that script already draws, and reads what it renders. Load it AFTER the live script. Remove its <script>
+ * tag and everything is exactly as before. Each page sets the player and colors on the tag:
+ *
+ *   <script src="../egg.js" data-player="Sam Hauser" data-bg="#008248" data-accent="#ba9653" data-text="#ffffff" defer></script>
+ *
+ * data-player: any part of the name works: "Last", "First Last", "Last, First".
  *
  * Limits, by design:
  *  - The overlay only exists (and only updates) while a dot is hovered, focused or tapped, so the
  *    egg can only fire while the overlay is open.
- *  - It needs the player's name in the latest-play text. Until the MEC feed has one, it stays silent.
- *
- * Same file works unchanged on the NBA, B.LEAGUE and Unrivaled pages (same overlay markup).
+ *  - It needs the player's name in the latest-play text. Until a feed has one, it stays silent.
  *
  ****************************/
 (() => {
-	const PLAYER = "Paige Bueckers";   // any part of the name works: "Last", "First Last", "Last, First"
-	const DURATION_MS = 6000;      // how long the colors stay
-	const COLORS = { bg: "4a4077", accent: "#b13679", text: "#ffffff" };
+	const { player: PLAYER, bg = "#000000", accent = "#ffffff", text: textColor = "#ffffff" } = document.currentScript?.dataset ?? {};
+	if (!PLAYER) return;
+
+	const DURATION_MS = 6000; // how long the colors stay
 
 	// Words in the play text that mean points were scored / not scored. Tune once real text is known.
 	const SCORED = /\b(made|makes|good|scores?|scored)\b/i;
@@ -33,17 +36,26 @@
 		return wanted.length > 0 && wanted.every((t) => have.has(t));
 	};
 
+	// An element's text with a space between its pieces: the play's time tag sits right against the text
+	// ("q3 4:12" + "Sam Hauser…"), and plain textContent would glue them into "12Sam".
+	function textOf(el) {
+		const parts = [];
+		const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+		while (walker.nextNode()) parts.push(walker.currentNode.nodeValue);
+		return parts.join(" ").replace(/\s+/g, " ").trim();
+	}
+
 	document.head.append(Object.assign(document.createElement("style"), {
 		textContent: `
 		#live-card.egg-on {
-			background: ${COLORS.bg} !important;
-			color: ${COLORS.text} !important;
-			border-color: ${COLORS.accent} !important;
-			box-shadow: 0 0 0 2px ${COLORS.accent}, 0 0 24px ${COLORS.accent} !important;
+			background: ${bg} !important;
+			color: ${textColor} !important;
+			border-color: ${accent} !important;
+			box-shadow: 0 0 0 2px ${accent}, 0 0 24px ${accent} !important;
 			animation: egg-pulse .5s ease-in-out 3;
 		}
 		#live-card.egg-on b, #live-card.egg-on .pts, #live-card.egg-on .when, #live-card.egg-on .abbr {
-			color: ${COLORS.accent} !important;
+			color: ${accent} !important;
 		}
 		@keyframes egg-pulse { 50% { transform: scale(1.04); } }
 		@media (prefers-reduced-motion: reduce) { #live-card.egg-on { animation: none; } }`
@@ -78,7 +90,7 @@
 
 			const play = card.querySelector(".play");
 			if (!play) return;
-			const text = play.textContent.replace(/\s+/g, " ").trim();
+			const text = textOf(play);
 
 			// The first play after opening is old news: remember it, don't react to it.
 			if (!armed) { armed = true; lastSig = text; return; }
@@ -101,7 +113,7 @@
 		window.eggTest = fire; // run eggTest() in the console (with the overlay open) to preview the colors
 	}
 
-	// live.js creates #live-card at load; wait for it if this script happens to run first.
+	// The live script creates #live-card at load; wait for it if this script happens to run first.
 	const existing = document.getElementById("live-card");
 	if (existing) init(existing);
 	else {

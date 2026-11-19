@@ -4,7 +4,6 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-		<meta name="description" content="unrivaled standings and live game tracker">
 
         <title>unrivaled</title>
 
@@ -35,10 +34,11 @@
             </footer>
         </section>
 
-        <!-- Order matters: helpers first, then standings, then the optional live-game layer. -->
-        <script src="scripts/helpers.js" defer></script>
+        <!-- Order matters: shared code first, then standings, then the optional live-game layer and its easter egg. -->
+        <!-- unrivaled.basketball and Sportradar don't send CORS headers, so every request goes through this Cloudflare Worker. It adds the Sportradar api_key itself, so the key never reaches the browser. -->
+        <script src="../dashboard.js" data-proxy="https://hidden-sea-74d9.tiny-river-02cf.workers.dev/?url=" defer></script>
         <script src="scripts/standings.js" defer></script>
         <script src="scripts/live.js" defer></script>
-        <script src="scripts/egg.js" defer></script>
+        <script src="../egg.js" data-player="Paige Bueckers" data-bg="#4a4077" data-accent="#b13679" data-text="#ffffff" defer></script>
     </body>
 </html>

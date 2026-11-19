@@ -9,6 +9,8 @@
  *
  ****************************/
 (() => {
+	const { esc, fetchText } = Dashboard;
+
 	const STANDINGS_URL = "https://www.unrivaled.basketball/standings";
 	const REFRESH_MS = 60000; // standings move when games end
 	const BYES = 2;           // the top two seeds skip the first round

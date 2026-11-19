@@ -4,7 +4,7 @@
  *
  * Live games
  * Adds a pulsing dot next to every club whose game is in progress. Hovering the dot
- * shows the score, the game clock and the latest play. Needs helpers.js, and standings.js to have
+ * shows the score, the game clock and the latest play. Needs dashboard.js, and standings.js to have
  * drawn the table (each club is a .team[data-team] element). Remove this file's
  * <script> tag and the standings page works exactly as before.
  *
@@ -16,6 +16,8 @@
  *
  ****************************/
 (() => {
+	const { esc, getJSON, addDots, createOverlay } = Dashboard;
+
 	const SR = "https://api.sportradar.com/unrivaled/trial/v8/en"; // "trial" becomes "production" with a paid key
 	const scheduleUrl = () => {
 		// The league's day is Eastern time.
@@ -28,18 +30,9 @@
 	const CARD_REFRESH_MS = 5000;  // how often the open overlay updates
 
 	const liveGames = new Map(); // club slug -> { id, home, away }, for games in progress
-	let activeDot = null;        // the dot whose overlay is open
-	let session = 0;             // bumped on every open and close, so stale polls stop themselves
-	let cardHtml = "";           // what the overlay shows now, so unchanged updates don't redraw it
 
-	const card = document.createElement("div");
-	card.id = "live-card";
-	card.className = "live-card";
-	card.setAttribute("role", "tooltip");
-	card.hidden = true;
-	document.body.append(card);
-
-	const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+	const overlay = createOverlay({ pollMs: CARD_REFRESH_MS, open: openCard, refresh: refreshCard });
+	const card = overlay.card;
 
 	// Sportradar names a club like "Phantom BC" or "Lunar Owls BC"; the table keys clubs by slug ("lunar-owls").
 	function slugOf(team) {
@@ -50,26 +43,13 @@
 	}
 
 	/****************************
-	 * Dots
-	 * One schedule request a minute marks the clubs currently playing.
+	 * Live clubs
+	 * One schedule request a minute marks the clubs currently playing. The dots themselves are
+	 * added by Dashboard.addDots(); this only shows and hides them.
 	 ****************************/
-	function addDots() {
-		for (const team of document.querySelectorAll(".team[data-team]")) {
-			if (team.querySelector(".live")) continue;
-			const dot = document.createElement("span");
-			dot.className = "live";
-			dot.dataset.team = team.dataset.team;
-			dot.tabIndex = 0;
-			dot.setAttribute("role", "button");
-			dot.setAttribute("aria-label", "live game: show score");
-			dot.hidden = true;
-			team.append(dot);
-		}
-	}
-
 	async function refreshLive() {
 		if (document.hidden) return;
-		const schedule = await fetchJSON(scheduleUrl());
+		const schedule = await getJSON(scheduleUrl());
 		if (!schedule) return; // keep what's showing if the request failed
 
 		liveGames.clear();
@@ -82,7 +62,7 @@
 		for (const dot of document.querySelectorAll(".live")) dot.hidden = !liveGames.has(dot.dataset.team);
 
 		// The game behind an open overlay may have just ended.
-		if (activeDot?.hidden) closeCard();
+		if (overlay.dot?.hidden) overlay.close();
 	}
 
 	/****************************
@@ -90,41 +70,16 @@
 	 * Opens on hover, focus or tap, then polls the game's play-by-play (score, clock and latest play)
 	 * while it stays open.
 	 ****************************/
-	function openCard(dot) {
-		if (activeDot === dot) return;
-		closeCard();
-		activeDot = dot;
-		dot.setAttribute("aria-describedby", card.id);
+	function openCard() {
 		card.hidden = false;
-		poll(dot, ++session);
 	}
 
-	function closeCard() {
-		session++;
-		activeDot?.removeAttribute("aria-describedby");
-		activeDot = null;
-		cardHtml = "";
-		card.hidden = true;
-	}
-
-	// One request at a time: the next wait only starts once the last request has finished.
-	async function poll(dot, id) {
-		while (id === session) {
-			try {
-				await refreshCard(dot, id);
-			} catch (err) {
-				console.warn("Overlay update failed:", err); // keep polling; the next response may be fine
-			}
-			await sleep(CARD_REFRESH_MS);
-		}
-	}
-
-	async function refreshCard(dot, id) {
+	async function refreshCard(dot, current) {
 		const game = liveGames.get(dot.dataset.team);
 		if (!game || document.hidden) return;
 
-		const data = await fetchJSON(pbpUrl(game.id));
-		if (id !== session || !data) return; // the overlay closed or moved on while the request ran
+		const data = await getJSON(pbpUrl(game.id));
+		if (!current() || !data) return; // the overlay closed or moved on while the request ran
 		renderCard(dot, game, data);
 	}
 
@@ -192,59 +147,9 @@
 			${status ? `<div class="status">${esc(status)}</div>` : ""}
 			${playHtml}`;
 
-		if (html === cardHtml) return; // nothing new; skip the redraw so images don't flicker
-		cardHtml = html;
-		card.innerHTML = html;
-		positionCard();
+		overlay.draw(html);
 	}
 
-	function positionCard() {
-		if (!activeDot) return;
-		const dot = activeDot.getBoundingClientRect();
-		const box = card.getBoundingClientRect();
-		const margin = 10;
-		const left = Math.min(dot.left, window.innerWidth - box.width - margin);
-		let top = dot.bottom + 8;
-		if (top + box.height > window.innerHeight - margin) top = dot.top - box.height - 8;
-		card.style.left = Math.max(margin, left) + "px";
-		card.style.top = Math.max(margin, top) + "px";
-	}
-
-	/****************************
-	 * Input
-	 * Delegated on document: the dots are created after the page loads.
-	 ****************************/
-	const dotAt = (e) => e.target.closest?.(".live");
-	const isTouch = (e) => e.pointerType === "touch";
-
-	// Hover uses pointer events, not mouse events: after a tap, touch browsers replay
-	// emulated mouse events (including a mouseout) that would close the overlay again.
-	document.addEventListener("pointerover", (e) => {
-		const dot = dotAt(e);
-		if (dot && !isTouch(e)) openCard(dot);
-	});
-	document.addEventListener("pointerout", (e) => {
-		const dot = dotAt(e);
-		if (dot && !isTouch(e) && !dot.contains(e.relatedTarget)) closeCard();
-	});
-	// Keyboard focus.
-	document.addEventListener("focusin", (e) => {
-		const dot = dotAt(e);
-		if (dot) openCard(dot);
-	});
-	document.addEventListener("focusout", (e) => {
-		const dot = dotAt(e);
-		if (dot && !dot.contains(e.relatedTarget)) closeCard();
-	});
-	// Touch has no hover: a tap opens the overlay, a tap anywhere else closes it.
-	document.addEventListener("pointerdown", (e) => {
-		const dot = dotAt(e);
-		if (!dot) closeCard();
-		else if (isTouch(e)) openCard(dot);
-	});
-	document.addEventListener("keydown", (e) => {
-		if (e.key === "Escape") closeCard();
-	});
 	document.addEventListener("visibilitychange", () => {
 		if (!document.hidden) refreshLive(); // catch up straight away after the tab was in the background
 	});
@@ -253,8 +158,6 @@
 		addDots();
 		refreshLive();
 	});
-	window.addEventListener("resize", positionCard);
-	window.addEventListener("scroll", positionCard, { capture: true, passive: true }); // capture: the page scrolls inside <section>
 
 	/****************************
 	 * Start

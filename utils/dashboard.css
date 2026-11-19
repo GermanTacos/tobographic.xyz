@@ -9,7 +9,6 @@
 
 /* On :root, not .dashboard: the live card is appended to <body>, outside the section */
 :root {
-	--color-surface: #202020; /* Change the overlay background color */
 	--color-surface-raised: #2a2a2a; /* Change the headshot and jersey badge backdrop color */
 	--color-line-subtle: #282828; /* Change the row divider color */
 	--color-text-dim: #585858; /* Change the out-of-contention text color */
@@ -258,19 +257,9 @@
 	}
 }
 
-/* Score overlay */
+/* Score overlay: the box itself is the base stylesheet's .popup; this only sets its width */
 .live-card {
-	position: fixed;
-	z-index: 100;
 	min-width: 270px;
-	max-width: min(340px, calc(100vw - 20px));
-	padding: 10px 14px;
-	background-color: var(--color-surface);
-	border: 2px solid var(--color-line);
-	box-shadow: 0 0 20px #000;
-	font-size: clamp(0.75em, 3.6vw, 1em);
-	text-transform: lowercase;
-	pointer-events: none;
 }
 /* Top row: logo, name, score, vs or @, score, name, logo */
 .live-card .matchup {

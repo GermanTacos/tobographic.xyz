@@ -4,7 +4,7 @@
  *
  * Live games
  * Adds a pulsing dot next to every club whose game is in progress. Hovering the dot shows the score,
- * the game clock and the latest play. Needs helpers.js, and standings.js to have drawn the tables
+ * the game clock and the latest play. Needs dashboard.js, and standings.js to have drawn the tables
  * (each club is a .team[data-team] element). Remove this file's <script> tag and the standings page
  * works exactly as before.
  *
@@ -15,6 +15,8 @@
  *
  ****************************/
 (() => {
+	const { esc, fetchText, getJSON, addDots, createOverlay } = Dashboard;
+
 	const SCHEDULE_URL = "https://www.bleague.jp/schedule/";
 	const FEED_URL = "https://b-league.s3.amazonaws.com/web_json/v2_genius_contexts/";
 
@@ -30,16 +32,11 @@
 	const games = new Map();      // ScheduleKey -> { id, data, next, ended }
 	const clubs = new Map();      // short or full Japanese club name -> its .team element in the table
 	const liveByClub = new Map(); // the same names -> the feed data of that club's game in progress
-	let activeDot = null;         // the dot whose overlay is open
-	let cardHtml = "";            // what the overlay shows now, so unchanged updates don't redraw it
 	let busy = false;
 
-	const card = document.createElement("div");
-	card.id = "live-card";
-	card.className = "live-card";
-	card.setAttribute("role", "tooltip");
-	card.hidden = true;
-	document.body.append(card);
+	// No polling: the feed updates are pushed in by tick(), which redraws the open card.
+	const overlay = createOverlay({ open: renderCard });
+	const card = overlay.card;
 
 	/****************************
 	 * Feed
@@ -70,7 +67,7 @@
 		}
 		game.next = Date.now() + LIVE_POLL_MS;
 		if (id === game.id) return;
-		const data = await fetchJSON(`${FEED_URL}${key}/${id}.json`);
+		const data = await getJSON(`${FEED_URL}${key}/${id}.json`);
 		if (!data?.Game || !data.PlayByPlays) return;
 		Object.assign(game, { id, data, ended: isOver(data) }); // a finished game stops being polled
 		const g = data.Game;
@@ -91,27 +88,16 @@
 	}
 
 	/****************************
-	 * Dots
+	 * Live clubs
 	 * A game is live once it has plays and hasn't ended. It belongs to a club when the feed's short
 	 * Japanese name (or full name) equals the table's.
 	 ****************************/
 	const liveData = (el) => liveByClub.get(el.dataset.team) ?? liveByClub.get(el.dataset.club);
 
-	function addDots() {
+	function addClubDots() {
 		clubs.clear();
-		for (const team of document.querySelectorAll(".team[data-team]")) {
-			clubs.set(team.dataset.team, team).set(team.dataset.club, team);
-			if (team.querySelector(".live")) continue;
-			const dot = document.createElement("span");
-			dot.className = "live";
-			dot.dataset.team = team.dataset.team;
-			dot.dataset.club = team.dataset.club;
-			dot.tabIndex = 0;
-			dot.setAttribute("role", "button");
-			dot.setAttribute("aria-label", "live game: show score");
-			dot.hidden = true;
-			team.append(dot);
-		}
+		for (const team of document.querySelectorAll(".team[data-team]")) clubs.set(team.dataset.team, team).set(team.dataset.club, team);
+		addDots(["club"]);
 	}
 
 	function refreshView() {
@@ -126,10 +112,11 @@
 		}
 		for (const dot of document.querySelectorAll(".live")) dot.hidden = !liveData(dot);
 
-		if (!activeDot) return;
+		const open = overlay.dot;
+		if (!open) return;
 		// The game behind an open overlay may have just ended, or the table may have redrawn under it.
-		if (activeDot.hidden || !activeDot.isConnected) closeCard();
-		else renderCard(activeDot);
+		if (open.hidden || !open.isConnected) overlay.close();
+		else renderCard(open);
 	}
 
 	/****************************
@@ -191,7 +178,7 @@
 	 ****************************/
 	function renderCard(dot) {
 		const data = liveData(dot);
-		if (!data) return closeCard();
+		if (!data) return overlay.close();
 		const g = data.Game;
 		const mineIsHome = g.HomeTeamShortNameJ === dot.dataset.team || g.HomeTeamNameJ === dot.dataset.club;
 
@@ -224,91 +211,24 @@
 			${playHtml}`;
 
 		card.hidden = false;
-		if (html === cardHtml) return; // nothing new; skip the redraw so images don't flicker
-		cardHtml = html;
-		card.innerHTML = html;
+		if (!overlay.draw(html)) return;
 		// Not every player has a photo: drop the image rather than show a broken one; the jersey number stays underneath.
 		card.querySelector(".num img")?.addEventListener("error", (e) => e.target.remove(), { once: true });
-		positionCard();
 	}
 
-	function openCard(dot) {
-		if (activeDot === dot) return;
-		closeCard();
-		activeDot = dot;
-		dot.setAttribute("aria-describedby", card.id);
-		renderCard(dot);
-	}
-
-	function closeCard() {
-		activeDot?.removeAttribute("aria-describedby");
-		activeDot = null;
-		cardHtml = "";
-		card.hidden = true;
-	}
-
-	function positionCard() {
-		if (!activeDot) return;
-		const dot = activeDot.getBoundingClientRect();
-		const box = card.getBoundingClientRect();
-		const margin = 10;
-		const left = Math.min(dot.left, window.innerWidth - box.width - margin);
-		let top = dot.bottom + 8;
-		if (top + box.height > window.innerHeight - margin) top = dot.top - box.height - 8;
-		card.style.left = Math.max(margin, left) + "px";
-		card.style.top = Math.max(margin, top) + "px";
-	}
-
-	/****************************
-	 * Input
-	 * Delegated on document: the dots are created after the page loads.
-	 ****************************/
-	const dotAt = (e) => e.target.closest?.(".live");
-	const isTouch = (e) => e.pointerType === "touch";
-
-	// Hover uses pointer events, not mouse events: after a tap, touch browsers replay
-	// emulated mouse events (including a mouseout) that would close the overlay again.
-	document.addEventListener("pointerover", (e) => {
-		const dot = dotAt(e);
-		if (dot && !isTouch(e)) openCard(dot);
-	});
-	document.addEventListener("pointerout", (e) => {
-		const dot = dotAt(e);
-		if (dot && !isTouch(e) && !dot.contains(e.relatedTarget)) closeCard();
-	});
-	// Keyboard focus.
-	document.addEventListener("focusin", (e) => {
-		const dot = dotAt(e);
-		if (dot) openCard(dot);
-	});
-	document.addEventListener("focusout", (e) => {
-		const dot = dotAt(e);
-		if (dot && !dot.contains(e.relatedTarget)) closeCard();
-	});
-	// Touch has no hover: a tap opens the overlay, a tap anywhere else closes it.
-	document.addEventListener("pointerdown", (e) => {
-		const dot = dotAt(e);
-		if (!dot) closeCard();
-		else if (isTouch(e)) openCard(dot);
-	});
-	document.addEventListener("keydown", (e) => {
-		if (e.key === "Escape") closeCard();
-	});
 	document.addEventListener("visibilitychange", () => {
 		if (!document.hidden) tick(); // catch up straight away after the tab was in the background
 	});
 	// The standings redraw when something in them changes; put the dots back on the new rows.
 	document.addEventListener("standings:rendered", () => {
-		addDots();
+		addClubDots();
 		refreshView();
 	});
-	window.addEventListener("resize", positionCard);
-	window.addEventListener("scroll", positionCard, { capture: true, passive: true }); // capture: the page scrolls inside <section>
 
 	/****************************
 	 * Start
 	 ****************************/
-	addDots(); // in case the tables are already there
+	addClubDots(); // in case the tables are already there
 	discover().then(tick);
 	setInterval(discover, DISCOVER_MS);
 	setInterval(tick, TICK_MS);

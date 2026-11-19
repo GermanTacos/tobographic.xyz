@@ -4,7 +4,6 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-		<meta name="description" content="ncaa d2 mountain east conference standings and live game tracker">
 
         <title>mec</title>
 
@@ -37,10 +36,12 @@
             </footer>
         </section>
 
-        <!-- Order matters: helpers first, then standings, then the optional live-game layer. -->
+        <!-- Order matters: shared code first, then standings, then the optional live-game layer and its easter egg. -->
+        <!-- mountaineast.org and data.ncaa.com don't send CORS headers, so every request goes through this Cloudflare Worker. Replace the subdomain with yours after deploying. -->
+        <script src="../dashboard.js" data-proxy="https://mec-proxy.tiny-river-02cf.workers.dev/?url=" defer></script>
         <script src="scripts/helpers.js" defer></script>
         <script src="scripts/standings.js" defer></script>
         <script src="scripts/live.js" defer></script>
-        <script src="scripts/egg.js" defer></script>
+        <script src="../egg.js" data-player="Levi Wanless" data-bg="#ff4c00" data-accent="#000000" data-text="#ffffff" defer></script>
     </body>
 </html>

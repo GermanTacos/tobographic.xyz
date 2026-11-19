@@ -10,6 +10,7 @@
 
 	--color-bg: #181818; /* Change the page background color */
 	--color-line: #383838; /* Change the border color */
+	--color-surface: #202020; /* Change the popup background color */
 
 	--color-text-strong: #989898; /* Change the greeting text color */
 	--color-text: #888888; /* Change the date text color */
@@ -198,6 +199,28 @@ footer.back h3 {
 }
 footer.back h3 a {
 	font-weight: 400;
+}
+
+/****************************
+ *
+ * Popup
+ * A floating card for hover, focus and tap overlays: the live score card on the dashboards, and anything
+ * else that should pop up beside what was pointed at. Add class="popup", position it with inline
+ * left/top (it is fixed to the viewport), and toggle the hidden attribute. Add your own class for its
+ * contents, and for a size if the content needs one (see .live-card in utils/dashboard.css).
+ *
+ ****************************/
+.popup {
+	position: fixed;
+	z-index: 100;
+	max-width: min(340px, calc(100vw - 20px));
+	padding: 10px 14px;
+	background-color: var(--color-surface);
+	border: 2px solid var(--color-line);
+	box-shadow: 0 0 20px #000;
+	font-size: clamp(0.75em, 3.6vw, 1em);
+	text-transform: lowercase;
+	pointer-events: none; /* the card never steals the hover that opened it */
 }
 
 /****************************
