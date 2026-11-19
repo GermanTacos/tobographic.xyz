@@ -248,6 +248,8 @@ footer.back h3 a {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	text-transform: lowercase;
+	font-style: italic;
 }
 .lyrics:hover p,
 .lyrics:focus p {
