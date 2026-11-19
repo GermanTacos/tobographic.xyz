@@ -225,6 +225,69 @@ footer.back h3 a {
 
 /****************************
  *
+ * Lyrics
+ * Two lyric lines in the bottom left; the popup card (see .popup) holds the song details.
+ *
+ ****************************/
+.lyrics {
+	position: fixed;
+	bottom: 10px;
+	left: 10px;
+	z-index: 50;
+	max-width: min(var(--content-width), calc(100vw - 20px));
+	color: var(--color-text-muted);
+	font-size: clamp(0.75em, 3.6vw, 1em);
+}
+.lyrics:hover,
+.lyrics:focus {
+	color: var(--color-text);
+	transition: 0.5s color ease; /* only on hover and focus, so the color fades in and snaps back */
+}
+.lyrics p {
+	margin: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.lyrics:hover p,
+.lyrics:focus p {
+	overflow: visible;
+	white-space: normal; /* long lines expand and wrap on hover */
+}
+.popup.lyrics-card {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	text-transform: none;
+}
+.lyrics-art {
+	flex: none;
+	width: 6em;
+	height: 6em;
+	object-fit: cover;
+}
+.lyrics-text {
+	min-width: 0;
+}
+.lyrics-text div + div {
+	margin-top: 0.25em;
+}
+.lyrics-song {
+	color: var(--color-text-strong);
+	font-size: 1.25em;
+	font-weight: bold;
+}
+.lyrics-artist {
+	color: var(--color-accent);
+	font-size: 1em;
+}
+.lyrics-meta {
+	color: var(--color-text-muted);
+	font-size: 1em;
+}
+
+/****************************
+ *
  * Images
  *
  ****************************/
