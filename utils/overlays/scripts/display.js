@@ -1,64 +1,57 @@
-// render results from index.js for display
+"use strict";
 
-function renderGrid(list) {
-	const container = document.getElementById("results");
-	container.innerHTML = "";
-
-	if (list.length === 0) {
-		container.textContent = "No results matching these filters!";
-		return;
+// Draws the results index.js hands over. index.js calls renderGrid(list).
+const renderGrid = (() => {
+	// Shorthand: el("p", "overlay-meta", "text") builds <p class="overlay-meta">text</p>.
+	function el(tag, className, text) {
+		const node = document.createElement(tag);
+		if (className) node.className = className;
+		if (text !== undefined) node.textContent = text;
+		return node;
 	}
 
-	const grid = document.createElement("div");
-	grid.className = "overlay-grid";
-	list.forEach(overlay => grid.appendChild(buildCard(overlay)));
-	container.appendChild(grid);
-}
-
-function buildCard(overlay) {
-	const card = document.createElement("div");
-	card.className = "overlay-card";
-
-	const img = document.createElement("img");
-	img.src = overlay.pngUrl;
-	img.alt = overlay.name;
-	img.loading = "lazy";
-	card.appendChild(img);
-
-	const title = document.createElement("h3");
-	title.textContent = overlay.name;
-	card.appendChild(title);
-
-	if (overlay.desc) {
-		const desc = document.createElement("p");
-		desc.className = "overlay-desc";
-		desc.textContent = overlay.desc;
-		card.appendChild(desc);
+	function downloadLink(label, href, filename) {
+		const link = el("a", "", label);
+		link.href = href;
+		link.download = filename;
+		return link;
 	}
 
-	const scaleLabel = overlay.intScale ? "int. scaled" : "non int. scaled";
-	const offsetLabel = overlay.offset ? ", offset" : "";
+	function buildCard(overlay) {
+		const card = el("div", "overlay-card");
 
-	const meta = document.createElement("p");
-	meta.className = "overlay-meta";
-	meta.textContent = `${overlay.res} \u00b7 ${overlay.sys} \u00b7 ${scaleLabel}${offsetLabel}`;
-	card.appendChild(meta);
+		const img = el("img");
+		img.src = overlay.pngUrl;
+		img.alt = overlay.name;
+		img.loading = "lazy";
+		card.append(img, el("h3", "", overlay.name));
 
-	const links = document.createElement("div");
-	links.className = "overlay-links";
+		if (overlay.desc) card.append(el("p", "overlay-desc", overlay.desc));
 
-	const pngLink = document.createElement("a");
-	pngLink.href = overlay.pngUrl;
-	pngLink.download = overlay.png;
-	pngLink.textContent = "PNG";
-	links.appendChild(pngLink);
+		const scaleLabel = overlay.intScale ? "int. scaled" : "non int. scaled";
+		const offsetLabel = overlay.offset ? ", offset" : "";
+		card.append(el("p", "overlay-meta", `${overlay.res} \u00b7 ${overlay.sys} \u00b7 ${scaleLabel}${offsetLabel}`));
 
-	const cfgLink = document.createElement("a");
-	cfgLink.href = overlay.cfgUrl;
-	cfgLink.download = overlay.cfg;
-	cfgLink.textContent = "CFG";
-	links.appendChild(cfgLink);
+		const links = el("div", "overlay-links");
+		links.append(
+			downloadLink("PNG", overlay.pngUrl, overlay.png),
+			downloadLink("CFG", overlay.cfgUrl, overlay.cfg)
+		);
+		card.append(links);
+		return card;
+	}
 
-	card.appendChild(links);
-	return card;
-}
+	return function renderGrid(list) {
+		const container = document.getElementById("results");
+		container.innerHTML = "";
+
+		if (list.length === 0) {
+			container.textContent = "No results matching these filters!";
+			return;
+		}
+
+		const grid = el("div", "overlay-grid");
+		grid.append(...list.map(buildCard));
+		container.append(grid);
+	};
+})();

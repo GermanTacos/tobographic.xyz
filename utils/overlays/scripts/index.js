@@ -1,119 +1,130 @@
-// scan overlays repo directly from browser
+"use strict";
 
-const REPO = { owner: "GermanTacos", name: "overlays", branch: "main" };
-const RAW_BASE = `https://raw.githubusercontent.com/${REPO.owner}/${REPO.name}/refs/heads/${REPO.branch}/`;
-const TREE_URL = `https://api.github.com/repos/${REPO.owner}/${REPO.name}/git/trees/${REPO.branch}?recursive=1`;
+// Scans the overlays repo directly from the browser, then filters and draws it (display.js draws).
+(() => {
+	const REPO = { owner: "GermanTacos", name: "overlays", branch: "main" };
+	const RAW_BASE = `https://raw.githubusercontent.com/${REPO.owner}/${REPO.name}/refs/heads/${REPO.branch}/`;
+	const TREE_URL = `https://api.github.com/repos/${REPO.owner}/${REPO.name}/git/trees/${REPO.branch}?recursive=1`;
 
-const CACHE_KEY = "overlay-index-cache";
-const CACHE_TTL_MS = 1000 * 60 * 30; // 30 min
+	const CACHE_KEY = "overlay-index-cache";
+	const CACHE_TTL_MS = 1000 * 60 * 30; // 30 min
 
-let overlays = [];
+	const FILTER_IDS = ["resolution", "console", "intScale", "offset"];
+	const resultsEl = () => document.getElementById("results");
 
-async function loadOverlayIndex() {
-	const cached = readCache();
-	if (cached) {
-		overlays = cached;
+	let overlays = [];
+
+	/****************************
+	 * Data
+	 ****************************/
+	async function fetchManifest(path) {
+		try {
+			const res = await fetch(RAW_BASE + path);
+			if (!res.ok) throw new Error(`Status ${res.status}`);
+			const data = await res.json();
+
+			const dir = path.slice(0, path.lastIndexOf("/") + 1);
+			return {
+				...data,
+				// coerce to real booleans if incorrectly formatted
+				intScale: data.intScale === true || data.intScale === "true",
+				offset: data.offset === true || data.offset === "true",
+				pngUrl: RAW_BASE + dir + data.png,
+				cfgUrl: RAW_BASE + dir + data.cfg,
+				// folder name (e.g. "640-480") is used as resolution key
+				// rather than parsing "res" display string ("640 x 480"),
+				// since it's more reliable / already normalized
+				resKey: dir.split("/")[0]
+			};
+		} catch (error) {
+			console.error(`Skipping manifest ${path}:`, error);
+			return null;
+		}
+	}
+
+	async function loadOverlayIndex() {
+		const cached = readCache();
+		if (cached) {
+			overlays = cached;
+			render();
+			return;
+		}
+
+		resultsEl().textContent = "Loading overlays…";
+
+		try {
+			// one api call lists every file in the repo
+			const treeRes = await fetch(TREE_URL);
+			if (!treeRes.ok) throw new Error(`Tree fetch failed: ${treeRes.status}`);
+			const tree = await treeRes.json();
+
+			const manifestPaths = tree.tree
+				.filter((entry) => entry.type === "blob" && entry.path.endsWith(".json"))
+				.map((entry) => entry.path);
+
+			// manifests fetched from raw.githubusercontent.com
+			const manifests = await Promise.all(manifestPaths.map(fetchManifest));
+			overlays = manifests.filter(Boolean);
+			writeCache(overlays);
+		} catch (error) {
+			console.error("Failed to build overlay index:", error);
+			resultsEl().textContent = "Couldn't load the overlay list — try refreshing in a bit.";
+			return;
+		}
+
 		render();
-		return;
 	}
 
-	document.getElementById("results").textContent = "Loading overlays…";
-
-	try {
-		// one api call lists every file in the repo
-		const treeRes = await fetch(TREE_URL);
-		if (!treeRes.ok) throw new Error(`Tree fetch failed: ${treeRes.status}`);
-		const tree = await treeRes.json();
-
-		const manifestPaths = tree.tree
-			.filter(entry => entry.type === "blob" && entry.path.endsWith(".json"))
-			.map(entry => entry.path);
-
-		// manifests fetched from raw.githubusercontent.com
-		const manifests = await Promise.all(manifestPaths.map(fetchManifest));
-		overlays = manifests.filter(Boolean);
-		writeCache(overlays);
-	} catch (error) {
-		console.error("Failed to build overlay index:", error);
-		document.getElementById("results").textContent =
-			"Couldn't load the overlay list — try refreshing in a bit.";
-		return;
-	}
-
-	render();
-}
-
-async function fetchManifest(path) {
-	try {
-		const res = await fetch(RAW_BASE + path);
-		if (!res.ok) throw new Error(`Status ${res.status}`);
-		const data = await res.json();
-
-		const dir = path.slice(0, path.lastIndexOf("/") + 1);
+	/****************************
+	 * Filtering
+	 ****************************/
+	function getFilters() {
 		return {
-			...data,
-			// coerce to real booleans if incorrectly formatted
-			intScale: data.intScale === true || data.intScale === "true",
-			offset: data.offset === true || data.offset === "true",
-			pngUrl: RAW_BASE + dir + data.png,
-			cfgUrl: RAW_BASE + dir + data.cfg,
-			// folder name (e.g. "640-480") is used as resolution key
-			// rather than parsing "res" display string ("640 x 480"),
-			// since it's more reliable / already normalized
-			resKey: dir.split("/")[0],
+			resolution: document.getElementById("resolution").value,
+			console: document.getElementById("console").value,
+			intScale: document.getElementById("intScale").checked,
+			offset: document.getElementById("offset").checked
 		};
-	} catch (error) {
-		console.error(`Skipping manifest ${path}:`, error);
-		return null;
 	}
-}
 
-function getFilters() {
-	return {
-		resolution: document.getElementById("resolution").value,
-		console: document.getElementById("console").value,
-		intScale: document.getElementById("intScale").checked,
-		offset: document.getElementById("offset").checked,
-	};
-}
-
-function matchesFilters(overlay, filters) {
-	if (filters.resolution !== "any" && overlay.resKey !== filters.resolution) return false;
-	if (filters.console !== "any" && overlay.sys !== filters.console) return false;
-	if ("intScale" in overlay && filters.intScale !== overlay.intScale) return false;
-	if ("offset" in overlay && filters.offset !== overlay.offset) return false;
-	return true;
-}
-
-function render() {
-	const filters = getFilters();
-	renderGrid(overlays.filter(o => matchesFilters(o, filters)));
-}
-
-function readCache() {
-	try {
-		const raw = localStorage.getItem(CACHE_KEY);
-		if (!raw) return null;
-		const { timestamp, data } = JSON.parse(raw);
-		if (Date.now() - timestamp > CACHE_TTL_MS) return null;
-		return data;
-	} catch {
-		return null;
+	function matchesFilters(overlay, filters) {
+		if (filters.resolution !== "any" && overlay.resKey !== filters.resolution) return false;
+		if (filters.console !== "any" && overlay.sys !== filters.console) return false;
+		if ("intScale" in overlay && filters.intScale !== overlay.intScale) return false;
+		if ("offset" in overlay && filters.offset !== overlay.offset) return false;
+		return true;
 	}
-}
 
-function writeCache(data) {
-	try {
-		localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data }));
-	} catch {
-		// storage unavailable or full
+	function render() {
+		const filters = getFilters();
+		renderGrid(overlays.filter((o) => matchesFilters(o, filters)));
 	}
-}
 
-// guarantee deferred script has finished executing first
-document.addEventListener("DOMContentLoaded", () => {
-	["resolution", "console", "intScale", "offset"].forEach(id => {
-		document.getElementById(id).addEventListener("change", render);
+	/****************************
+	 * Cache
+	 ****************************/
+	function readCache() {
+		try {
+			const raw = localStorage.getItem(CACHE_KEY);
+			if (!raw) return null;
+			const { timestamp, data } = JSON.parse(raw);
+			return Date.now() - timestamp > CACHE_TTL_MS ? null : data;
+		} catch {
+			return null;
+		}
+	}
+
+	function writeCache(data) {
+		try {
+			localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data }));
+		} catch {
+			// storage unavailable or full
+		}
+	}
+
+	// Wait for DOMContentLoaded: it fires after every deferred script has run, so display.js is ready by then.
+	document.addEventListener("DOMContentLoaded", () => {
+		for (const id of FILTER_IDS) document.getElementById(id).addEventListener("change", render);
+		loadOverlayIndex();
 	});
-	loadOverlayIndex();
-});
+})();
